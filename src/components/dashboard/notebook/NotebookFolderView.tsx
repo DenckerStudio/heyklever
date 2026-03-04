@@ -77,6 +77,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { FilePreviewDialog } from "@/components/ui/file-preview-dialog";
 
 interface NotebookFolderViewProps {
   onFileSelect: (file: DriveItem | null) => void;
@@ -357,6 +358,9 @@ export const NotebookFolderView = forwardRef<NotebookFolderViewRef, NotebookFold
   // File operations state
   const [deletingFile, setDeletingFile] = useState<DriveItem | null>(null);
   const [isDeletingFile, setIsDeletingFile] = useState(false);
+  
+  // File preview state
+  const [previewFile, setPreviewFile] = useState<DriveItem | null>(null);
   
   const { addUpload, updateUpload, uploads } = useUpload();
   
@@ -1065,12 +1069,14 @@ export const NotebookFolderView = forwardRef<NotebookFolderViewRef, NotebookFold
     const isHovered = hoveredFileId === file.id;
     const staticIcon = getStaticFileIcon(file.name);
 
+    const handleOpen = () => setPreviewFile(file);
+
     // Shared menu content for both dropdown and context menu
     const menuContent = (
       <>
-        <DropdownMenuItem onClick={() => onFileSelect(file)}>
+        <DropdownMenuItem onClick={handleOpen}>
           <Eye className="w-4 h-4 mr-2" />
-          Open
+          Preview
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => handleFileDownload(file)}>
           <Download className="w-4 h-4 mr-2" />
@@ -1102,9 +1108,9 @@ export const NotebookFolderView = forwardRef<NotebookFolderViewRef, NotebookFold
 
     const contextMenuContent = (
       <>
-        <ContextMenuItem onSelect={() => onFileSelect(file)}>
+        <ContextMenuItem onSelect={handleOpen}>
           <Eye className="w-4 h-4 mr-2" />
-          Open
+          Preview
         </ContextMenuItem>
         <ContextMenuItem onSelect={() => handleFileDownload(file)}>
           <Download className="w-4 h-4 mr-2" />
@@ -1140,7 +1146,7 @@ export const NotebookFolderView = forwardRef<NotebookFolderViewRef, NotebookFold
           <ContextMenuTrigger
             onMouseEnter={() => setHoveredFileId(file.id)}
             onMouseLeave={() => setHoveredFileId(null)}
-            onClick={() => onFileSelect(file)}
+            onClick={handleOpen}
             className={cn(
               "group relative flex flex-col items-center gap-2.5 p-3.5 rounded-2xl cursor-pointer transition-all duration-300",
               "border border-transparent",
@@ -1210,7 +1216,7 @@ export const NotebookFolderView = forwardRef<NotebookFolderViewRef, NotebookFold
     return (
       <ContextMenu>
         <ContextMenuTrigger
-          onClick={() => onFileSelect(file)}
+          onClick={handleOpen}
           onMouseEnter={() => setHoveredFileId(file.id)}
           onMouseLeave={() => setHoveredFileId(null)}
           className={cn(
@@ -2132,6 +2138,16 @@ export const NotebookFolderView = forwardRef<NotebookFolderViewRef, NotebookFold
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* File Preview Dialog */}
+      <FilePreviewDialog
+        open={!!previewFile}
+        onOpenChange={(open) => { if (!open) setPreviewFile(null); }}
+        fileName={previewFile?.name || ""}
+        filePath={previewFile?.path || previewFile?.name || ""}
+        context={scope === "public" ? "public" : "private"}
+        onAskAI={previewFile ? () => onFileSelect(previewFile) : undefined}
+      />
     </div>
   );
 });
