@@ -1,95 +1,41 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Check, X, Zap, Sparkles, Crown, Rocket, Star } from "lucide-react";
-
-const plans = [
-  {
-    name: "Free",
-    popular: false,
-    price: "$0",
-    period: "/month",
-    description: "Perfect for getting started",
-    icon: Rocket,
-    gradient: "from-slate-500/10 via-slate-500/5 to-transparent",
-    iconColor: "text-slate-500",
-    features: ["5 Projects", "Basic Components", "Community Support"],
-  },
-  {
-    name: "Pro",
-    popular: true,
-    price: "$29",
-    period: "/month",
-    description: "Most popular for professionals",
-    icon: Star,
-    gradient: "from-primary/20 via-primary/10 to-transparent",
-    iconColor: "text-primary",
-    features: [
-      "Unlimited Projects",
-      "Advanced Animations",
-      "Priority Support",
-      "API Access",
-    ],
-  },
-  {
-    name: "Enterprise",
-    popular: false,
-    price: "$99",
-    period: "/month",
-    description: "For large teams and organizations",
-    icon: Crown,
-    gradient: "from-purple-500/20 via-purple-500/10 to-transparent",
-    iconColor: "text-purple-500",
-    features: [
-      "Everything in Pro",
-      "Custom Integrations",
-      "Dedicated Manager",
-      "SLA Support",
-    ],
-  },
-];
+import { Check, X, Zap } from "lucide-react";
 
 const features = [
   {
     category: "Core Features",
     items: [
-      { name: "Basic Components", free: true, pro: true, enterprise: true },
-      { name: "Advanced Animations", free: false, pro: true, enterprise: true },
-      { name: "Custom Themes", free: false, pro: true, enterprise: true },
-      { name: "Priority Support", free: false, pro: false, enterprise: true },
+      { name: "Basic Components", free: true, enterprise: true },
+      { name: "Advanced Animations", free: false, enterprise: true },
+      { name: "Custom Themes", free: false, enterprise: true },
+      { name: "Priority Support", free: false, enterprise: true },
     ],
   },
   {
     category: "Integrations",
     items: [
-      { name: "API Access", free: false, pro: true, enterprise: true },
-      { name: "Webhooks", free: false, pro: false, enterprise: true },
-      {
-        name: "Custom Integrations",
-        free: false,
-        pro: false,
-        enterprise: true,
-      },
+      { name: "API Access", free: false, enterprise: true },
+      { name: "Webhooks", free: false, enterprise: true },
+      { name: "Custom Integrations", free: false, enterprise: true },
     ],
   },
   {
     category: "Support & Limits",
     items: [
-      { name: "5 Projects", free: true, pro: false, enterprise: false },
-      { name: "Unlimited Projects", free: false, pro: true, enterprise: true },
-      { name: "Team Collaboration", free: false, pro: true, enterprise: true },
-      { name: "Dedicated Manager", free: false, pro: false, enterprise: true },
+      { name: "5 Projects", free: true, enterprise: false },
+      { name: "Unlimited Projects", free: false, enterprise: true },
+      { name: "Team Collaboration", free: false, enterprise: true },
+      { name: "Dedicated Manager", free: false, enterprise: true },
     ],
   },
 ];
 
 export function FeatureComparisonBlock() {
-  const [hoveredPlan, setHoveredPlan] = useState<number | null>(null);
-
   return (
     <section className="w-full bg-background px-4 py-16">
       <div className="mx-auto max-w-7xl">
@@ -97,7 +43,7 @@ export function FeatureComparisonBlock() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="mb-12 text-center"
+          className="mb-8 text-center"
         >
           <Badge className="mb-4" variant="secondary">
             <div className="flex items-center justify-center gap-2">
@@ -105,229 +51,31 @@ export function FeatureComparisonBlock() {
               Compare Plans
             </div>
           </Badge>
-          <h2 className="mb-4 text-4xl font-bold tracking-tight">
+          <h2 className="mb-4 text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl">
             Choose the right plan for you
           </h2>
-          <p className="mx-auto max-w-2xl text-muted-foreground">
-            Compare features across all our plans and find the perfect fit for
-            your needs
+          <p className="mx-auto max-w-2xl text-sm sm:text-base text-muted-foreground px-2">
+            Compare features across Free and Enterprise and find the perfect fit
+            for your needs
           </p>
         </motion.div>
 
-        {/* Pricing Cards - No horizontal scroll */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="mb-12"
-        >
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 space-y-6">
-            {plans.map((plan, index) => {
-              const Icon = plan.icon;
-              const isHovered = hoveredPlan === index;
-
-              return (
-                <motion.div
-                  key={plan.name}
-                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ delay: 0.1 * index, duration: 0.5 }}
-                  onHoverStart={() => setHoveredPlan(index)}
-                  onHoverEnd={() => setHoveredPlan(null)}
-                  className="relative"
-                >
-                  {/* Popular badge glow effect */}
-                  {plan.popular && (
-                    <motion.div
-                      className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-primary via-primary/50 to-primary opacity-20 blur-xl"
-                      animate={{
-                        opacity: [0.2, 0.4, 0.2],
-                        scale: [1, 1.02, 1],
-                      }}
-                      transition={{
-                        duration: 3,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                      }}
-                    />
-                  )}
-
-                  <Card
-                    className={`group relative overflow-hidden border-border/50 bg-gradient-to-br from-card via-card to-card/80 backdrop-blur-sm transition-all duration-500 ${
-                      plan.popular
-                        ? "border-primary/50 shadow-2xl shadow-primary/10"
-                        : "hover:border-primary/30 hover:shadow-xl"
-                    } ${isHovered && !plan.popular ? "scale-[1.02]" : ""} ${
-                      plan.popular ? "scale-[1.05] lg:scale-110" : ""
-                    }`}
-                  >
-                    {/* Gradient overlay */}
-                    <motion.div
-                      className={`absolute inset-0 bg-gradient-to-br ${plan.gradient} opacity-0 transition-opacity duration-500`}
-                      animate={isHovered ? { opacity: 1 } : { opacity: 0 }}
-                    />
-
-                    {/* Shimmer effect */}
-                    {isHovered && (
-                      <motion.div
-                        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
-                        animate={{ x: ["-200%", "200%"] }}
-                        transition={{
-                          duration: 1.5,
-                          repeat: Infinity,
-                          ease: "linear",
-                        }}
-                      />
-                    )}
-
-                    {/* Popular badge */}
-                    {plan.popular && (
-                      <motion.div
-                        initial={{ scale: 0, rotate: -180 }}
-                        animate={{ scale: 1, rotate: 0 }}
-                        transition={{
-                          delay: 0.3 + index * 0.1,
-                          type: "spring",
-                        }}
-                        className="absolute -right-1 -top-1"
-                      >
-                        <Badge className="gap-1 rounded-br-md rounded-tl-md rounded-tr-none border-indigo-500/20 bg-primary dark:bg-indigo-500/20 shadow-lg dark:text-white">
-                          <div className="flex items-center justify-center px-3 py-1">
-                            <Sparkles className="h-3 w-3 mr-2" />
-                            Most Popular
-                          </div>
-                        </Badge>
-                      </motion.div>
-                    )}
-
-                    <div className="relative z-10 p-6 md:p-8">
-                      {/* Icon */}
-                      <motion.div
-                        className="mb-4 flex justify-center"
-                        whileHover={{ rotate: 360, scale: 1.1 }}
-                        transition={{ duration: 0.6 }}
-                      >
-                        <div
-                          className={`rounded-2xl bg-gradient-to-br ${plan.gradient} p-3 shadow-lg`}
-                        >
-                          <Icon className={`h-8 w-8 ${plan.iconColor}`} />
-                        </div>
-                      </motion.div>
-
-                      {/* Plan name and description */}
-                      <div className="mb-6 text-center">
-                        <h3 className="mb-2 text-2xl font-bold tracking-tight">
-                          {plan.name}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {plan.description}
-                        </p>
-                      </div>
-
-                      {/* Price */}
-                      <div className="mb-6 text-center">
-                        <motion.div
-                          animate={isHovered ? { scale: 1.05 } : { scale: 1 }}
-                          transition={{ duration: 0.2 }}
-                        >
-                          <span className="text-5xl font-bold tracking-tight">
-                            {plan.price}
-                          </span>
-                          <span className="ml-1 text-base text-muted-foreground">
-                            {plan.period}
-                          </span>
-                        </motion.div>
-                      </div>
-
-                      {/* Features list */}
-                      <motion.ul className="mb-6 space-y-3">
-                        {plan.features.map((feature, idx) => (
-                          <motion.li
-                            key={feature}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: 0.4 + idx * 0.1 }}
-                            className="flex items-start gap-2"
-                          >
-                            <motion.div
-                              whileHover={{ scale: 1.2, rotate: 360 }}
-                              transition={{ duration: 0.3 }}
-                            >
-                              <Check
-                                className={`mt-0.5 h-5 w-5 flex-shrink-0 ${plan.iconColor}`}
-                              />
-                            </motion.div>
-                            <span className="text-sm text-foreground/90">
-                              {feature}
-                            </span>
-                          </motion.li>
-                        ))}
-                      </motion.ul>
-
-                      {/* CTA Button */}
-                      <Button
-                        className={`group relative w-full overflow-hidden ${
-                          plan.popular ? "shadow-lg shadow-primary/20" : ""
-                        }`}
-                        variant={plan.popular ? "default" : "outline"}
-                        size="lg"
-                      >
-                        <motion.span
-                          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                          animate={
-                            isHovered
-                              ? { x: ["-200%", "200%"] }
-                              : { x: "-200%" }
-                          }
-                          transition={{
-                            duration: 0.8,
-                            ease: "easeInOut",
-                          }}
-                        />
-                        <span className="relative">
-                          {plan.popular ? "Get Started Now" : "Choose Plan"}
-                        </span>
-                        <motion.span
-                          className="relative ml-2"
-                          animate={isHovered ? { x: [0, 5, 0] } : { x: 0 }}
-                          transition={{
-                            duration: 0.5,
-                            repeat: isHovered ? Infinity : 0,
-                          }}
-                        >
-                          →
-                        </motion.span>
-                      </Button>
-
-                      {/* Popular plan extra info */}
-                      {plan.popular && (
-                        <motion.p
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: 0.6 }}
-                          className="mt-3 text-center text-xs text-muted-foreground"
-                        >
-                          ✨ Best value for money
-                        </motion.p>
-                      )}
-                    </div>
-                  </Card>
-                </motion.div>
-              );
-            })}
-          </div>
-        </motion.div>
-
-        {/* Feature Comparison Table - Horizontal scroll only for table */}
-        <div className="overflow-x-auto">
+        {/* Feature Comparison Table - Free vs Enterprise */}
+        <div className="overflow-x-auto -mx-2 px-2 sm:mx-0 sm:px-0">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.6, delay: 0.4 }}
-            className="min-w-[640px]"
+            className="min-w-[280px] w-full max-w-2xl mx-auto"
           >
             <div className="space-y-6">
+              {/* Column headers for comparison table */}
+              <div className="grid grid-cols-[1fr_auto_auto] sm:grid-cols-3 gap-3 sm:gap-4 px-3 sm:px-4 pb-2 text-xs sm:text-sm font-medium text-muted-foreground">
+                <span>Feature</span>
+                <span className="text-center w-10 sm:w-12 shrink-0">Free</span>
+                <span className="text-center w-10 sm:w-12 shrink-0">Enterprise</span>
+              </div>
               {features.map((category, categoryIndex) => (
                 <motion.div
                   key={category.category}
@@ -336,7 +84,7 @@ export function FeatureComparisonBlock() {
                   viewport={{ once: true, margin: "-50px" }}
                   transition={{ delay: 0.1 * categoryIndex, duration: 0.4 }}
                 >
-                  <h4 className="mb-4 text-lg font-semibold">
+                  <h4 className="mb-3 sm:mb-4 text-base sm:text-lg font-semibold">
                     {category.category}
                   </h4>
                   <Card className="relative overflow-hidden border-border/20 bg-card/50 backdrop-blur-sm">
@@ -385,7 +133,7 @@ export function FeatureComparisonBlock() {
                           backgroundColor: "hsl(var(--muted) / 0.5)",
                           transition: { duration: 0.2 },
                         }}
-                        className={`relative grid grid-cols-4 gap-4 border-b border-border/10 p-4 last:border-b-0 transition-colors ${
+                        className={`relative grid grid-cols-[1fr_auto_auto] sm:grid-cols-3 gap-3 sm:gap-4 border-b border-border/10 p-3 sm:p-4 last:border-b-0 transition-colors ${
                           featureIndex % 2 === 0
                             ? "bg-muted/20"
                             : "bg-background/50"
@@ -401,14 +149,14 @@ export function FeatureComparisonBlock() {
                           transition={{ duration: 0.2 }}
                         />
 
-                        <div className="col-span-1 flex items-center">
-                          <span className="text-sm font-medium text-foreground/90">
+                        <div className="flex items-center min-w-0">
+                          <span className="text-sm font-medium text-foreground/90 truncate">
                             {feature.name}
                           </span>
                         </div>
 
                         {/* Free */}
-                        <div className="flex items-center justify-center">
+                        <div className="flex items-center justify-center w-10 sm:w-12 shrink-0">
                           <motion.div
                             initial={{ scale: 0, rotate: -180 }}
                             whileInView={{
@@ -429,128 +177,10 @@ export function FeatureComparisonBlock() {
                             className="relative"
                           >
                             {feature.free ? (
-                              <motion.div
-                                className="relative"
-                                animate={{
-                                  scale: [1, 1.1, 1],
-                                }}
-                                transition={{
-                                  duration: 2,
-                                  repeat: Infinity,
-                                  ease: "easeInOut",
-                                  repeatDelay: 1,
-                                }}
-                              >
-                                {/* Main checkmark with bounce-in animation */}
-                                <motion.div
-                                  initial={{ scale: 0, rotate: -180 }}
-                                  animate={{
-                                    scale: 1,
-                                    rotate: 0,
-                                  }}
-                                  transition={{
-                                    delay: 0.1 * featureIndex + 0.2,
-                                    type: "spring",
-                                    stiffness: 500,
-                                    damping: 20,
-                                  }}
-                                >
-                                  <Check
-                                    className="h-5 w-5 text-primary"
-                                    strokeWidth={2.5}
-                                  />
-                                </motion.div>
-                                {/* Pulsing glow effect */}
-                                <motion.div
-                                  className="absolute inset-0 -z-10"
-                                  animate={{
-                                    opacity: [0.3, 0.6, 0.3],
-                                    scale: [1, 1.3, 1],
-                                  }}
-                                  transition={{
-                                    duration: 2,
-                                    repeat: Infinity,
-                                    ease: "easeInOut",
-                                  }}
-                                >
-                                  <Check className="h-5 w-5 text-primary/40 blur-sm" />
-                                </motion.div>
-                              </motion.div>
-                            ) : (
-                              <X className="h-5 w-5 text-muted-foreground/20" />
-                            )}
-                          </motion.div>
-                        </div>
-
-                        {/* Pro */}
-                        <div className="flex items-center justify-center">
-                          <motion.div
-                            initial={{ scale: 0, rotate: -180 }}
-                            whileInView={{
-                              scale: feature.pro ? 1 : 0.6,
-                              rotate: 0,
-                            }}
-                            viewport={{ once: true, margin: "-20px" }}
-                            transition={{
-                              delay: 0.1 * featureIndex + 0.3,
-                              type: "spring",
-                              stiffness: 500,
-                              damping: 25,
-                            }}
-                            whileHover={{
-                              scale: feature.pro ? 1.3 : 0.8,
-                              rotate: feature.pro ? [0, -10, 10, -10, 0] : 0,
-                            }}
-                            className="relative"
-                          >
-                            {feature.pro ? (
-                              <motion.div
-                                className="relative"
-                                animate={{
-                                  scale: [1, 1.1, 1],
-                                }}
-                                transition={{
-                                  duration: 2,
-                                  repeat: Infinity,
-                                  ease: "easeInOut",
-                                  repeatDelay: 1,
-                                }}
-                              >
-                                {/* Main checkmark with bounce-in animation */}
-                                <motion.div
-                                  initial={{ scale: 0, rotate: -180 }}
-                                  animate={{
-                                    scale: 1,
-                                    rotate: 0,
-                                  }}
-                                  transition={{
-                                    delay: 0.1 * featureIndex + 0.3,
-                                    type: "spring",
-                                    stiffness: 500,
-                                    damping: 20,
-                                  }}
-                                >
-                                  <Check
-                                    className="h-5 w-5 text-primary"
-                                    strokeWidth={2.5}
-                                  />
-                                </motion.div>
-                                {/* Pulsing glow effect */}
-                                <motion.div
-                                  className="absolute inset-0 -z-10"
-                                  animate={{
-                                    opacity: [0.3, 0.6, 0.3],
-                                    scale: [1, 1.3, 1],
-                                  }}
-                                  transition={{
-                                    duration: 2,
-                                    repeat: Infinity,
-                                    ease: "easeInOut",
-                                  }}
-                                >
-                                  <Check className="h-5 w-5 text-primary/40 blur-sm" />
-                                </motion.div>
-                              </motion.div>
+                              <Check
+                                className="h-5 w-5 text-primary"
+                                strokeWidth={2.5}
+                              />
                             ) : (
                               <X className="h-5 w-5 text-muted-foreground/20" />
                             )}
@@ -558,7 +188,7 @@ export function FeatureComparisonBlock() {
                         </div>
 
                         {/* Enterprise */}
-                        <div className="flex items-center justify-center">
+                        <div className="flex items-center justify-center w-10 sm:w-12 shrink-0">
                           <motion.div
                             initial={{ scale: 0, rotate: -180 }}
                             whileInView={{
@@ -567,7 +197,7 @@ export function FeatureComparisonBlock() {
                             }}
                             viewport={{ once: true, margin: "-20px" }}
                             transition={{
-                              delay: 0.1 * featureIndex + 0.4,
+                              delay: 0.1 * featureIndex + 0.3,
                               type: "spring",
                               stiffness: 500,
                               damping: 25,
@@ -581,53 +211,10 @@ export function FeatureComparisonBlock() {
                             className="relative"
                           >
                             {feature.enterprise ? (
-                              <motion.div
-                                className="relative"
-                                animate={{
-                                  scale: [1, 1.1, 1],
-                                }}
-                                transition={{
-                                  duration: 2,
-                                  repeat: Infinity,
-                                  ease: "easeInOut",
-                                  repeatDelay: 1,
-                                }}
-                              >
-                                {/* Main checkmark with bounce-in animation */}
-                                <motion.div
-                                  initial={{ scale: 0, rotate: -180 }}
-                                  animate={{
-                                    scale: 1,
-                                    rotate: 0,
-                                  }}
-                                  transition={{
-                                    delay: 0.1 * featureIndex + 0.4,
-                                    type: "spring",
-                                    stiffness: 500,
-                                    damping: 20,
-                                  }}
-                                >
-                                  <Check
-                                    className="h-5 w-5 text-primary"
-                                    strokeWidth={2.5}
-                                  />
-                                </motion.div>
-                                {/* Pulsing glow effect */}
-                                <motion.div
-                                  className="absolute inset-0 -z-10"
-                                  animate={{
-                                    opacity: [0.3, 0.6, 0.3],
-                                    scale: [1, 1.3, 1],
-                                  }}
-                                  transition={{
-                                    duration: 2,
-                                    repeat: Infinity,
-                                    ease: "easeInOut",
-                                  }}
-                                >
-                                  <Check className="h-5 w-5 text-primary/40 blur-sm" />
-                                </motion.div>
-                              </motion.div>
+                              <Check
+                                className="h-5 w-5 text-primary"
+                                strokeWidth={2.5}
+                              />
                             ) : (
                               <X className="h-5 w-5 text-muted-foreground/20" />
                             )}
