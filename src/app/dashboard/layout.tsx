@@ -96,6 +96,7 @@ const viewTitleMap: Record<DashboardView, string> = {
   'features': 'Features',
   'chat': 'Chat',
   'train-ai': 'Train AI',
+  'welcome': 'Welcome',
 };
 
 // Header component that uses the view context

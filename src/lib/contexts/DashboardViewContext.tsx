@@ -15,7 +15,8 @@ export type DashboardView =
   | 'public-docs'
   | 'features'
   | 'chat'
-  | 'train-ai';
+  | 'train-ai'
+  | 'welcome';
 
 // Map URL paths to view names
 const pathToView: Record<string, DashboardView> = {
@@ -31,6 +32,7 @@ const pathToView: Record<string, DashboardView> = {
   '/dashboard/features': 'features',
   '/dashboard/chat': 'chat',
   '/dashboard/train-ai': 'train-ai',
+  '/dashboard/welcome': 'welcome',
 };
 
 // Map view names to URL paths
@@ -47,6 +49,7 @@ const viewToPath: Record<DashboardView, string> = {
   'features': '/dashboard/features',
   'chat': '/dashboard/chat',
   'train-ai': '/dashboard/train-ai',
+  'welcome': '/dashboard/welcome',
 };
 
 interface DashboardViewContextValue {
@@ -62,19 +65,24 @@ export function DashboardViewProvider({ children }: { children: React.ReactNode 
   const pathname = usePathname();
   const router = useRouter();
   const [currentView, setCurrentView] = useState<DashboardView>(() => {
-    // Initialize from current pathname
     return pathToView[pathname] || 'notebook';
   });
   const [isTransitioning, setIsTransitioning] = useState(false);
 
+  // Persist last-visited view to localStorage
+  useEffect(() => {
+    if (currentView && typeof window !== 'undefined') {
+      try { localStorage.setItem('klever_last_view', currentView); } catch {}
+    }
+  }, [currentView]);
+
   // Sync view with URL when navigating via browser back/forward
-  // Only update if we have an explicit path->view mapping to avoid spurious resets
   useEffect(() => {
     const view = pathToView[pathname];
     if (view && view !== currentView) {
       setCurrentView(view);
     }
-  }, [pathname]); // Removed currentView from deps to prevent re-running on state changes
+  }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const navigateTo = useCallback((view: DashboardView) => {
     if (view === currentView) return;
@@ -82,11 +90,9 @@ export function DashboardViewProvider({ children }: { children: React.ReactNode 
     setIsTransitioning(true);
     setCurrentView(view);
     
-    // Update URL using Next.js router to maintain proper state
     const newPath = viewToPath[view];
     router.push(newPath);
     
-    // Small delay to allow animation
     setTimeout(() => {
       setIsTransitioning(false);
     }, 50);
