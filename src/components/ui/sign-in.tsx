@@ -267,6 +267,16 @@ export const SignInPage: React.FC<SignInPageProps> = ({
                   required
                 />
 
+                {mode === 'signup' && (
+                  <AnimatedInput
+                    label="Team / Organization"
+                    name="teamName"
+                    type="text"
+                    placeholder="e.g. Acme Inc."
+                    required
+                  />
+                )}
+
                 {mode === 'signin' && (
                   <motion.div
                     initial={{ opacity: 0 }}

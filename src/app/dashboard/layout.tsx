@@ -194,11 +194,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 		}
 	}, [searchParams]);
 
-	// Show team onboarding if user has no teams and not loading, unless processing an invite
+	// Auto-create team from pending signup data, or fall back to onboarding
 	useEffect(() => {
-		if (!teamsLoading && !hasTeams && !inviteDialog.open) {
-			router.push('/dashboard/team-onboarding');
+		if (teamsLoading || hasTeams || inviteDialog.open) return;
+
+		const pendingTeamName = localStorage.getItem('pendingTeamName');
+		if (pendingTeamName) {
+			localStorage.removeItem('pendingTeamName');
+			fetch('/api/teams/create', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ name: pendingTeamName }),
+			})
+				.then(() => { window.location.href = '/dashboard'; })
+				.catch(() => { router.push('/dashboard/team-onboarding'); });
+			return;
 		}
+
+		router.push('/dashboard/team-onboarding');
 	}, [teamsLoading, hasTeams, inviteDialog.open, router]);
 
   const [open, setOpen] = useState(false);
