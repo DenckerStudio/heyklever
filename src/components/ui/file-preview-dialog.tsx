@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "motion/react";
+import { FileVisibilityMenu } from "@/components/ui/file-visibility-menu";
+import { Shield } from "lucide-react";
 
 interface FilePreviewDialogProps {
   open: boolean;
@@ -172,6 +174,7 @@ export function FilePreviewDialog({
                     <BrainCircuit className="w-3.5 h-3.5" /> Ask AI
                   </Button>
                 )}
+                <AccessDropdown fileName={fileName} />
                 <Button variant="ghost" size="sm" className="gap-1.5 text-xs" asChild>
                   <a href={downloadUrl} download>
                     <Download className="w-3.5 h-3.5" /> Download
@@ -243,6 +246,25 @@ export function FilePreviewDialog({
         </>
       )}
     </AnimatePresence>
+  );
+}
+
+function AccessDropdown({ fileName }: { fileName: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative">
+      <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => setOpen(!open)}>
+        <Shield className="w-3.5 h-3.5" /> Access
+      </Button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div className="absolute right-0 top-full mt-1 z-50 bg-background border border-border/50 rounded-xl shadow-xl">
+            <FileVisibilityMenu fileName={fileName} onChanged={() => setOpen(false)} />
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 

@@ -27,6 +27,7 @@ import {
   AlertTriangle,
   BrainCircuit,
   Share2,
+  Shield,
 } from "lucide-react";
 import { normalizeFileName, cn } from "@/lib/utils";
 import { useUpload } from "@/lib/upload-context";
@@ -78,6 +79,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { FilePreviewDialog } from "@/components/ui/file-preview-dialog";
+import { FileVisibilityMenu } from "@/components/ui/file-visibility-menu";
 
 interface NotebookFolderViewProps {
   onFileSelect: (file: DriveItem | null) => void;
@@ -1087,10 +1089,17 @@ export const NotebookFolderView = forwardRef<NotebookFolderViewRef, NotebookFold
           <Copy className="w-4 h-4 mr-2" />
           Copy path
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => {/* share not wired */}}>
-          <Share2 className="w-4 h-4 mr-2" />
-          Share
-        </DropdownMenuItem>
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <Shield className="w-4 h-4 mr-2" />
+            Access
+          </DropdownMenuSubTrigger>
+          <DropdownMenuPortal>
+            <DropdownMenuSubContent className="p-0 rounded-xl w-auto">
+              <FileVisibilityMenu fileName={file.name} />
+            </DropdownMenuSubContent>
+          </DropdownMenuPortal>
+        </DropdownMenuSub>
         <DropdownMenuItem onClick={() => onFileSelect(file)}>
           <BrainCircuit className="w-4 h-4 mr-2" />
           Ask AI
@@ -1121,10 +1130,15 @@ export const NotebookFolderView = forwardRef<NotebookFolderViewRef, NotebookFold
           <Copy className="w-4 h-4 mr-2" />
           Copy path
         </ContextMenuItem>
-        <ContextMenuItem onSelect={() => {/* share not wired */}}>
-          <Share2 className="w-4 h-4 mr-2" />
-          Share
-        </ContextMenuItem>
+        <ContextMenuSub>
+          <ContextMenuSubTrigger>
+            <Shield className="w-4 h-4 mr-2" />
+            Access
+          </ContextMenuSubTrigger>
+          <ContextMenuSubContent className="p-0 rounded-xl w-auto">
+            <FileVisibilityMenu fileName={file.name} />
+          </ContextMenuSubContent>
+        </ContextMenuSub>
         <ContextMenuItem onSelect={() => onFileSelect(file)}>
           <BrainCircuit className="w-4 h-4 mr-2" />
           Ask AI about this file
