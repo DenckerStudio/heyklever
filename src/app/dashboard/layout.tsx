@@ -233,7 +233,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     </motion.div>
                   </div>
                 </div>
-                <nav className="mt-8 flex flex-col gap-6" aria-label="Dashboard navigation">
+                <nav className={cn("mt-8 flex flex-col transition-[gap] duration-200 ease-in-out", open ? "gap-6" : "gap-0.5")} aria-label="Dashboard navigation">
                   {navCategories.map((category) => (
                     <div key={category.label} className="flex flex-col gap-2">
                       <NavCategoryLabel>{category.label}</NavCategoryLabel>
