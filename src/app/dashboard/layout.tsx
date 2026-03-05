@@ -26,21 +26,57 @@ import { DashboardViewRenderer } from '@/components/dashboard/views';
 import { useSidebar } from '@/components/ui/sidebar';
 import { cn } from '@/lib/utils';
 
-// Category label: hidden in closed mode, same animation as nav link labels
-function NavCategoryLabel({ children }: { children: React.ReactNode }) {
-  const { open, animate } = useSidebar();
+// Collapsible nav category with dropdown toggle
+function NavCategory({ label, children }: { label: string; children: React.ReactNode }) {
+  const { open: sidebarOpen, animate } = useSidebar();
+  const storageKey = `klever_nav_${label}`;
+  const [expanded, setExpanded] = useState(() => {
+    if (typeof window === 'undefined') return true;
+    try { const v = localStorage.getItem(storageKey); return v === null ? true : v === '1'; } catch { return true; }
+  });
+
+  const toggle = () => {
+    const next = !expanded;
+    setExpanded(next);
+    try { localStorage.setItem(storageKey, next ? '1' : '0'); } catch {}
+  };
+
+  const showLabel = animate ? sidebarOpen : true;
+
   return (
-    <motion.span
-      data-nav-category
-      animate={{
-        display: animate ? (open ? "inline-block" : "none") : "inline-block",
-        opacity: animate ? (open ? 1 : 0) : 1,
-      }}
-      transition={{ duration: 0.15 }}
-      className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-2 inline-block overflow-hidden whitespace-nowrap"
-    >
-      {children}
-    </motion.span>
+    <div className="flex flex-col">
+      {showLabel ? (
+        <button
+          onClick={toggle}
+          className="flex items-center justify-between px-2 py-1 group/cat w-full text-left"
+        >
+          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest select-none group-hover/cat:text-foreground/70 transition-colors">
+            {label}
+          </span>
+          <motion.span
+            animate={{ rotate: expanded ? 0 : -90 }}
+            transition={{ duration: 0.15 }}
+            className="text-muted-foreground/50 group-hover/cat:text-muted-foreground transition-colors"
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M3 4.5L6 7.5L9 4.5" />
+            </svg>
+          </motion.span>
+        </button>
+      ) : null}
+      <motion.div
+        animate={{
+          height: (!showLabel || expanded) ? 'auto' : 0,
+          opacity: (!showLabel || expanded) ? 1 : 0,
+        }}
+        transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+        className="overflow-hidden"
+      >
+        <div className="flex flex-col gap-0.5 pt-0.5">
+          {children}
+        </div>
+      </motion.div>
+    </div>
   );
 }
 
@@ -267,16 +303,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     </motion.div>
                   </div>
                 </div>
-                <nav className={cn("mt-8 flex flex-col transition-[gap] duration-200 ease-in-out", open ? "gap-6" : "gap-0.5")} aria-label="Dashboard navigation">
+                <nav className={cn("mt-8 flex flex-col transition-[gap] duration-200 ease-in-out", open ? "gap-4" : "gap-0.5")} aria-label="Dashboard navigation">
                   {navCategories.map((category) => (
-                    <div key={category.label} className="flex flex-col gap-2">
-                      <NavCategoryLabel>{category.label}</NavCategoryLabel>
-                      <div className="flex flex-col gap-0.5">
-                        {category.links.map((link) => (
-                          <DashboardNavLink key={link.view} {...link} />
-                        ))}
-                      </div>
-                    </div>
+                    <NavCategory key={category.label} label={category.label}>
+                      {category.links.map((link) => (
+                        <DashboardNavLink key={link.view} {...link} />
+                      ))}
+                    </NavCategory>
                   ))}
                 </nav>
               </div>
