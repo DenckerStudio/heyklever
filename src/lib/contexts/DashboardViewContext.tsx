@@ -16,7 +16,8 @@ export type DashboardView =
   | 'features'
   | 'chat'
   | 'train-ai'
-  | 'welcome';
+  | 'welcome'
+  | 'admin';
 
 // Map URL paths to view names
 const pathToView: Record<string, DashboardView> = {
@@ -33,6 +34,7 @@ const pathToView: Record<string, DashboardView> = {
   '/dashboard/chat': 'chat',
   '/dashboard/train-ai': 'train-ai',
   '/dashboard/welcome': 'welcome',
+  '/dashboard/admin': 'admin',
 };
 
 // Map view names to URL paths
@@ -50,6 +52,7 @@ const viewToPath: Record<DashboardView, string> = {
   'chat': '/dashboard/chat',
   'train-ai': '/dashboard/train-ai',
   'welcome': '/dashboard/welcome',
+  'admin': '/dashboard/admin',
 };
 
 interface DashboardViewContextValue {
