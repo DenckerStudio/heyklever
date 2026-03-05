@@ -167,7 +167,7 @@ export function KnowledgeBaseView({
     getStorageItem<TimePeriod>(STORAGE_KEYS.PERIOD, "month") // Default to last 30 days
   );
   const [canvasCollapsed, setCanvasCollapsed] = useState<boolean>(() =>
-    getStorageItem<boolean>(STORAGE_KEYS.CANVAS_COLLAPSED, true)
+    getStorageItem<boolean>(STORAGE_KEYS.CANVAS_COLLAPSED, false)
   );
   const [isLiveData, setIsLiveData] = useState(false);
   const autoRefreshRef = useRef<NodeJS.Timeout | null>(null);
@@ -417,34 +417,34 @@ export function KnowledgeBaseView({
           <TabsContent value="overview" className="m-0 h-full p-6 pt-0">
             <div className="space-y-6">
               {/* Knowledge Topics – collapsible canvas */}
-              <div className="rounded-xl border border-border/30 bg-muted/10 overflow-hidden">
+              <div className="rounded-2xl border border-border/30 bg-gradient-to-br from-card via-card to-muted/20 overflow-hidden shadow-sm">
                 {canvasCollapsed ? (
                   <button
                     type="button"
                     onClick={toggleCanvasCollapsed}
-                    className="w-full flex items-center justify-between gap-4 px-4 py-3 text-left hover:bg-muted/20 transition-colors"
+                    className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left hover:bg-muted/20 transition-colors"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="p-2 rounded-lg bg-primary/10 shrink-0">
+                      <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 to-violet-500/10 shrink-0">
                         <Sparkles className="h-4 w-4 text-primary" />
                       </div>
                       <div className="min-w-0">
-                        <span className="font-medium text-foreground">Knowledge Topics</span>
-                        <span className="text-muted-foreground text-sm ml-2">{topics.length} topics</span>
+                        <span className="font-semibold text-foreground">Knowledge Topics</span>
+                        <span className="text-muted-foreground text-sm ml-2">· {topics.length} topics discovered</span>
                       </div>
                     </div>
                     <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
                   </button>
                 ) : (
                   <>
-                    <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border/30 bg-background/50">
+                    <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border/20">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-primary/10">
+                        <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 to-violet-500/10">
                           <Sparkles className="h-4 w-4 text-primary" />
                         </div>
                         <div>
                           <h3 className="text-sm font-semibold">Knowledge Topics</h3>
-                          <p className="text-xs text-muted-foreground">{topics.length} topics</p>
+                          <p className="text-xs text-muted-foreground">{topics.length} topics discovered across your documents</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5">
@@ -459,7 +459,7 @@ export function KnowledgeBaseView({
                         </Button>
                       </div>
                     </div>
-                    <div className="relative h-[420px] w-full">
+                    <div className="relative h-[420px] w-full bg-gradient-to-b from-transparent to-muted/10">
                       {visualizationMode === "3d" ? (
                         <KnowledgeVisualization3D
                           topics={topics}

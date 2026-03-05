@@ -25,6 +25,9 @@ import {
   Pencil,
   Palette,
   AlertTriangle,
+  BrainCircuit,
+  Share2,
+  Shield,
 } from "lucide-react";
 import { normalizeFileName, cn } from "@/lib/utils";
 import { useUpload } from "@/lib/upload-context";
@@ -75,6 +78,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { FilePreviewDialog } from "@/components/ui/file-preview-dialog";
+import { FileVisibilityMenu } from "@/components/ui/file-visibility-menu";
 
 interface NotebookFolderViewProps {
   onFileSelect: (file: DriveItem | null) => void;
@@ -151,72 +156,73 @@ interface FileTypeConfig {
   color: string;
   bgColor: string;
   label: string;
+  gradient: string;
+  ring: string;
 }
+
+const DEFAULT_FILE_CONFIG: FileTypeConfig = {
+  icon: File,
+  color: 'text-muted-foreground',
+  bgColor: 'bg-muted/50',
+  label: 'FILE',
+  gradient: 'from-slate-500/20 to-slate-600/10',
+  ring: 'ring-slate-400/20',
+};
 
 function getFileTypeConfig(fileName: string): FileTypeConfig {
   const extension = fileName.split('.').pop()?.toLowerCase() || '';
-  
+
   const configs: Record<string, FileTypeConfig> = {
     // Documents
-    pdf: { icon: FileText, color: 'text-red-500', bgColor: 'bg-red-500/10', label: 'PDF' },
-    doc: { icon: FileText, color: 'text-blue-500', bgColor: 'bg-blue-500/10', label: 'DOC' },
-    docx: { icon: FileText, color: 'text-blue-500', bgColor: 'bg-blue-500/10', label: 'DOCX' },
-    txt: { icon: FileText, color: 'text-slate-500', bgColor: 'bg-slate-500/10', label: 'TXT' },
-    md: { icon: FileText, color: 'text-slate-600', bgColor: 'bg-slate-500/10', label: 'MD' },
-    rtf: { icon: FileText, color: 'text-blue-400', bgColor: 'bg-blue-400/10', label: 'RTF' },
-    
+    pdf:  { icon: FileText, color: 'text-red-500',     bgColor: 'bg-red-500/10',     label: 'PDF',  gradient: 'from-red-500/20 to-rose-600/10',       ring: 'ring-red-400/30' },
+    doc:  { icon: FileText, color: 'text-blue-500',    bgColor: 'bg-blue-500/10',    label: 'DOC',  gradient: 'from-blue-500/20 to-indigo-600/10',    ring: 'ring-blue-400/30' },
+    docx: { icon: FileText, color: 'text-blue-500',    bgColor: 'bg-blue-500/10',    label: 'DOCX', gradient: 'from-blue-500/20 to-indigo-600/10',    ring: 'ring-blue-400/30' },
+    txt:  { icon: FileText, color: 'text-slate-500',   bgColor: 'bg-slate-500/10',   label: 'TXT',  gradient: 'from-slate-500/20 to-slate-600/10',    ring: 'ring-slate-400/20' },
+    md:   { icon: FileText, color: 'text-slate-600',   bgColor: 'bg-slate-500/10',   label: 'MD',   gradient: 'from-slate-500/20 to-slate-600/10',    ring: 'ring-slate-400/20' },
+    rtf:  { icon: FileText, color: 'text-blue-400',    bgColor: 'bg-blue-400/10',    label: 'RTF',  gradient: 'from-blue-400/20 to-blue-500/10',      ring: 'ring-blue-300/20' },
     // Spreadsheets
-    xls: { icon: FileText, color: 'text-emerald-500', bgColor: 'bg-emerald-500/10', label: 'XLS' },
-    xlsx: { icon: FileText, color: 'text-emerald-500', bgColor: 'bg-emerald-500/10', label: 'XLSX' },
-    csv: { icon: FileText, color: 'text-emerald-400', bgColor: 'bg-emerald-400/10', label: 'CSV' },
-    
+    xls:  { icon: FileText, color: 'text-emerald-500', bgColor: 'bg-emerald-500/10', label: 'XLS',  gradient: 'from-emerald-500/20 to-green-600/10',  ring: 'ring-emerald-400/30' },
+    xlsx: { icon: FileText, color: 'text-emerald-500', bgColor: 'bg-emerald-500/10', label: 'XLSX', gradient: 'from-emerald-500/20 to-green-600/10',  ring: 'ring-emerald-400/30' },
+    csv:  { icon: FileText, color: 'text-emerald-400', bgColor: 'bg-emerald-400/10', label: 'CSV',  gradient: 'from-emerald-400/20 to-green-500/10',  ring: 'ring-emerald-300/20' },
     // Presentations
-    ppt: { icon: FileText, color: 'text-orange-500', bgColor: 'bg-orange-500/10', label: 'PPT' },
-    pptx: { icon: FileText, color: 'text-orange-500', bgColor: 'bg-orange-500/10', label: 'PPTX' },
-    
+    ppt:  { icon: FileText, color: 'text-orange-500',  bgColor: 'bg-orange-500/10',  label: 'PPT',  gradient: 'from-orange-500/20 to-amber-600/10',   ring: 'ring-orange-400/30' },
+    pptx: { icon: FileText, color: 'text-orange-500',  bgColor: 'bg-orange-500/10',  label: 'PPTX', gradient: 'from-orange-500/20 to-amber-600/10',   ring: 'ring-orange-400/30' },
     // Images
-    jpg: { icon: FileImage, color: 'text-purple-500', bgColor: 'bg-purple-500/10', label: 'JPG' },
-    jpeg: { icon: FileImage, color: 'text-purple-500', bgColor: 'bg-purple-500/10', label: 'JPEG' },
-    png: { icon: FileImage, color: 'text-purple-500', bgColor: 'bg-purple-500/10', label: 'PNG' },
-    gif: { icon: FileImage, color: 'text-pink-500', bgColor: 'bg-pink-500/10', label: 'GIF' },
-    webp: { icon: FileImage, color: 'text-purple-400', bgColor: 'bg-purple-400/10', label: 'WEBP' },
-    svg: { icon: FileImage, color: 'text-amber-500', bgColor: 'bg-amber-500/10', label: 'SVG' },
-    ico: { icon: FileImage, color: 'text-purple-300', bgColor: 'bg-purple-300/10', label: 'ICO' },
-    
+    jpg:  { icon: FileImage, color: 'text-purple-500', bgColor: 'bg-purple-500/10',  label: 'JPG',  gradient: 'from-purple-500/20 to-violet-600/10',  ring: 'ring-purple-400/30' },
+    jpeg: { icon: FileImage, color: 'text-purple-500', bgColor: 'bg-purple-500/10',  label: 'JPEG', gradient: 'from-purple-500/20 to-violet-600/10',  ring: 'ring-purple-400/30' },
+    png:  { icon: FileImage, color: 'text-purple-500', bgColor: 'bg-purple-500/10',  label: 'PNG',  gradient: 'from-purple-500/20 to-violet-600/10',  ring: 'ring-purple-400/30' },
+    gif:  { icon: FileImage, color: 'text-pink-500',   bgColor: 'bg-pink-500/10',    label: 'GIF',  gradient: 'from-pink-500/20 to-rose-600/10',      ring: 'ring-pink-400/30' },
+    webp: { icon: FileImage, color: 'text-purple-400', bgColor: 'bg-purple-400/10',  label: 'WEBP', gradient: 'from-purple-400/20 to-violet-500/10',  ring: 'ring-purple-300/20' },
+    svg:  { icon: FileImage, color: 'text-amber-500',  bgColor: 'bg-amber-500/10',   label: 'SVG',  gradient: 'from-amber-500/20 to-yellow-600/10',   ring: 'ring-amber-400/30' },
+    ico:  { icon: FileImage, color: 'text-purple-300', bgColor: 'bg-purple-300/10',  label: 'ICO',  gradient: 'from-purple-300/20 to-violet-400/10',  ring: 'ring-purple-200/20' },
     // Video
-    mp4: { icon: FileVideo, color: 'text-rose-500', bgColor: 'bg-rose-500/10', label: 'MP4' },
-    webm: { icon: FileVideo, color: 'text-rose-500', bgColor: 'bg-rose-500/10', label: 'WEBM' },
-    mov: { icon: FileVideo, color: 'text-rose-400', bgColor: 'bg-rose-400/10', label: 'MOV' },
-    avi: { icon: FileVideo, color: 'text-rose-400', bgColor: 'bg-rose-400/10', label: 'AVI' },
-    mkv: { icon: FileVideo, color: 'text-rose-500', bgColor: 'bg-rose-500/10', label: 'MKV' },
-    
+    mp4:  { icon: FileVideo, color: 'text-rose-500',   bgColor: 'bg-rose-500/10',    label: 'MP4',  gradient: 'from-rose-500/20 to-red-600/10',       ring: 'ring-rose-400/30' },
+    webm: { icon: FileVideo, color: 'text-rose-500',   bgColor: 'bg-rose-500/10',    label: 'WEBM', gradient: 'from-rose-500/20 to-red-600/10',       ring: 'ring-rose-400/30' },
+    mov:  { icon: FileVideo, color: 'text-rose-400',   bgColor: 'bg-rose-400/10',    label: 'MOV',  gradient: 'from-rose-400/20 to-red-500/10',       ring: 'ring-rose-300/20' },
+    avi:  { icon: FileVideo, color: 'text-rose-400',   bgColor: 'bg-rose-400/10',    label: 'AVI',  gradient: 'from-rose-400/20 to-red-500/10',       ring: 'ring-rose-300/20' },
+    mkv:  { icon: FileVideo, color: 'text-rose-500',   bgColor: 'bg-rose-500/10',    label: 'MKV',  gradient: 'from-rose-500/20 to-red-600/10',       ring: 'ring-rose-400/30' },
     // Audio
-    mp3: { icon: FileAudio, color: 'text-cyan-500', bgColor: 'bg-cyan-500/10', label: 'MP3' },
-    wav: { icon: FileAudio, color: 'text-cyan-500', bgColor: 'bg-cyan-500/10', label: 'WAV' },
-    ogg: { icon: FileAudio, color: 'text-cyan-400', bgColor: 'bg-cyan-400/10', label: 'OGG' },
-    m4a: { icon: FileAudio, color: 'text-cyan-500', bgColor: 'bg-cyan-500/10', label: 'M4A' },
-    flac: { icon: FileAudio, color: 'text-cyan-600', bgColor: 'bg-cyan-600/10', label: 'FLAC' },
-    
+    mp3:  { icon: FileAudio, color: 'text-cyan-500',   bgColor: 'bg-cyan-500/10',    label: 'MP3',  gradient: 'from-cyan-500/20 to-teal-600/10',      ring: 'ring-cyan-400/30' },
+    wav:  { icon: FileAudio, color: 'text-cyan-500',   bgColor: 'bg-cyan-500/10',    label: 'WAV',  gradient: 'from-cyan-500/20 to-teal-600/10',      ring: 'ring-cyan-400/30' },
+    ogg:  { icon: FileAudio, color: 'text-cyan-400',   bgColor: 'bg-cyan-400/10',    label: 'OGG',  gradient: 'from-cyan-400/20 to-teal-500/10',      ring: 'ring-cyan-300/20' },
+    m4a:  { icon: FileAudio, color: 'text-cyan-500',   bgColor: 'bg-cyan-500/10',    label: 'M4A',  gradient: 'from-cyan-500/20 to-teal-600/10',      ring: 'ring-cyan-400/30' },
+    flac: { icon: FileAudio, color: 'text-cyan-600',   bgColor: 'bg-cyan-600/10',    label: 'FLAC', gradient: 'from-cyan-600/20 to-teal-700/10',      ring: 'ring-cyan-500/20' },
     // Code/Web
-    html: { icon: FileText, color: 'text-orange-500', bgColor: 'bg-orange-500/10', label: 'HTML' },
-    css: { icon: FileText, color: 'text-blue-500', bgColor: 'bg-blue-500/10', label: 'CSS' },
-    js: { icon: FileText, color: 'text-yellow-500', bgColor: 'bg-yellow-500/10', label: 'JS' },
-    ts: { icon: FileText, color: 'text-blue-600', bgColor: 'bg-blue-600/10', label: 'TS' },
-    json: { icon: FileText, color: 'text-amber-500', bgColor: 'bg-amber-500/10', label: 'JSON' },
-    xml: { icon: FileText, color: 'text-orange-400', bgColor: 'bg-orange-400/10', label: 'XML' },
-    
+    html: { icon: FileText, color: 'text-orange-500',  bgColor: 'bg-orange-500/10',  label: 'HTML', gradient: 'from-orange-500/20 to-amber-600/10',   ring: 'ring-orange-400/30' },
+    css:  { icon: FileText, color: 'text-blue-500',    bgColor: 'bg-blue-500/10',    label: 'CSS',  gradient: 'from-blue-500/20 to-indigo-600/10',    ring: 'ring-blue-400/30' },
+    js:   { icon: FileText, color: 'text-yellow-500',  bgColor: 'bg-yellow-500/10',  label: 'JS',   gradient: 'from-yellow-500/20 to-amber-600/10',   ring: 'ring-yellow-400/30' },
+    ts:   { icon: FileText, color: 'text-blue-600',    bgColor: 'bg-blue-600/10',    label: 'TS',   gradient: 'from-blue-600/20 to-indigo-700/10',    ring: 'ring-blue-500/20' },
+    json: { icon: FileText, color: 'text-amber-500',   bgColor: 'bg-amber-500/10',   label: 'JSON', gradient: 'from-amber-500/20 to-yellow-600/10',   ring: 'ring-amber-400/30' },
+    xml:  { icon: FileText, color: 'text-orange-400',  bgColor: 'bg-orange-400/10',  label: 'XML',  gradient: 'from-orange-400/20 to-amber-500/10',   ring: 'ring-orange-300/20' },
     // Archives
-    zip: { icon: File, color: 'text-amber-600', bgColor: 'bg-amber-600/10', label: 'ZIP' },
-    rar: { icon: File, color: 'text-amber-600', bgColor: 'bg-amber-600/10', label: 'RAR' },
-    '7z': { icon: File, color: 'text-amber-600', bgColor: 'bg-amber-600/10', label: '7Z' },
+    zip:  { icon: File, color: 'text-amber-600',       bgColor: 'bg-amber-600/10',   label: 'ZIP',  gradient: 'from-amber-600/20 to-yellow-700/10',   ring: 'ring-amber-500/20' },
+    rar:  { icon: File, color: 'text-amber-600',       bgColor: 'bg-amber-600/10',   label: 'RAR',  gradient: 'from-amber-600/20 to-yellow-700/10',   ring: 'ring-amber-500/20' },
+    '7z': { icon: File, color: 'text-amber-600',       bgColor: 'bg-amber-600/10',   label: '7Z',   gradient: 'from-amber-600/20 to-yellow-700/10',   ring: 'ring-amber-500/20' },
   };
 
-  return configs[extension] || { 
-    icon: File, 
-    color: 'text-muted-foreground', 
-    bgColor: 'bg-muted/50', 
-    label: extension.toUpperCase() || 'FILE' 
-  };
+  const c = configs[extension];
+  if (c) return c;
+  return { ...DEFAULT_FILE_CONFIG, label: extension.toUpperCase() || 'FILE' };
 }
 
 // Legacy function for compatibility
@@ -354,6 +360,9 @@ export const NotebookFolderView = forwardRef<NotebookFolderViewRef, NotebookFold
   // File operations state
   const [deletingFile, setDeletingFile] = useState<DriveItem | null>(null);
   const [isDeletingFile, setIsDeletingFile] = useState(false);
+  
+  // File preview state
+  const [previewFile, setPreviewFile] = useState<DriveItem | null>(null);
   
   const { addUpload, updateUpload, uploads } = useUpload();
   
@@ -1062,20 +1071,38 @@ export const NotebookFolderView = forwardRef<NotebookFolderViewRef, NotebookFold
     const isHovered = hoveredFileId === file.id;
     const staticIcon = getStaticFileIcon(file.name);
 
+    const handleOpen = () => setPreviewFile(file);
+
     // Shared menu content for both dropdown and context menu
     const menuContent = (
       <>
-        <DropdownMenuItem onClick={() => onFileSelect(file)}>
+        <DropdownMenuItem onClick={handleOpen}>
           <Eye className="w-4 h-4 mr-2" />
-          Open
+          Preview
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => handleFileDownload(file)}>
           <Download className="w-4 h-4 mr-2" />
           Download
         </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => handleFileCopyPath(file)}>
           <Copy className="w-4 h-4 mr-2" />
           Copy path
+        </DropdownMenuItem>
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <Shield className="w-4 h-4 mr-2" />
+            Access
+          </DropdownMenuSubTrigger>
+          <DropdownMenuPortal>
+            <DropdownMenuSubContent className="p-0 rounded-xl w-auto">
+              <FileVisibilityMenu fileName={file.name} />
+            </DropdownMenuSubContent>
+          </DropdownMenuPortal>
+        </DropdownMenuSub>
+        <DropdownMenuItem onClick={() => onFileSelect(file)}>
+          <BrainCircuit className="w-4 h-4 mr-2" />
+          Ask AI
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem 
@@ -1090,21 +1117,35 @@ export const NotebookFolderView = forwardRef<NotebookFolderViewRef, NotebookFold
 
     const contextMenuContent = (
       <>
-        <ContextMenuItem onSelect={() => onFileSelect(file)}>
+        <ContextMenuItem onSelect={handleOpen}>
           <Eye className="w-4 h-4 mr-2" />
-          Open
+          Preview
         </ContextMenuItem>
         <ContextMenuItem onSelect={() => handleFileDownload(file)}>
           <Download className="w-4 h-4 mr-2" />
           Download
         </ContextMenuItem>
+        <ContextMenuSeparator />
         <ContextMenuItem onSelect={() => handleFileCopyPath(file)}>
           <Copy className="w-4 h-4 mr-2" />
           Copy path
         </ContextMenuItem>
+        <ContextMenuSub>
+          <ContextMenuSubTrigger>
+            <Shield className="w-4 h-4 mr-2" />
+            Access
+          </ContextMenuSubTrigger>
+          <ContextMenuSubContent className="p-0 rounded-xl w-auto">
+            <FileVisibilityMenu fileName={file.name} />
+          </ContextMenuSubContent>
+        </ContextMenuSub>
+        <ContextMenuItem onSelect={() => onFileSelect(file)}>
+          <BrainCircuit className="w-4 h-4 mr-2" />
+          Ask AI about this file
+        </ContextMenuItem>
         <ContextMenuSeparator />
         <ContextMenuItem 
-          className="text-red-600 dark:text-red-400 hover:bg-red-500/10"
+          className="text-red-600 dark:text-red-400 focus:bg-red-500/10"
           onSelect={() => setDeletingFile(file)}
         >
           <Trash2 className="w-4 h-4 mr-2" />
@@ -1119,62 +1160,66 @@ export const NotebookFolderView = forwardRef<NotebookFolderViewRef, NotebookFold
           <ContextMenuTrigger
             onMouseEnter={() => setHoveredFileId(file.id)}
             onMouseLeave={() => setHoveredFileId(null)}
-            onClick={() => onFileSelect(file)}
+            onClick={handleOpen}
             className={cn(
-              "group relative flex flex-col items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200",
-              "hover:bg-muted/50",
-              isSelected && "bg-primary/10"
+              "group relative flex flex-col items-center gap-2.5 p-3.5 rounded-2xl cursor-pointer transition-all duration-300",
+              "border border-transparent",
+              "hover:bg-gradient-to-b hover:from-muted/60 hover:to-muted/20 hover:border-border/40 hover:shadow-lg hover:shadow-black/5",
+              isSelected && "bg-primary/5 border-primary/30 ring-1 ring-primary/20 shadow-md shadow-primary/5"
             )}
           >
-            {/* File Icon with type color */}
+            {/* Futuristic file icon container */}
             <div className={cn(
-              "relative w-16 h-16 flex items-center justify-center transition-all duration-200",
-              "group-hover:scale-110"
+              "relative w-14 h-14 rounded-xl flex items-center justify-center transition-all duration-300",
+              "bg-gradient-to-br",
+              fileConfig.gradient,
+              "ring-1",
+              fileConfig.ring,
+              "group-hover:scale-110 group-hover:shadow-md",
+              isSelected && "ring-2 ring-primary/40 shadow-lg"
             )}>
               {staticIcon ? (
-                <div className="w-12 h-12 relative flex items-center justify-center">
-                  <img 
-                    src={staticIcon} 
-                    alt={file.name} 
-                    className="w-full h-full object-contain"
-                  />
-                </div>
+                <img src={staticIcon} alt={file.name} className="w-8 h-8 object-contain drop-shadow-sm" />
               ) : (
-                <IconComponent className={cn(
-                  "w-10 h-10 transition-colors",
-                  isSelected ? "text-primary" : fileConfig.color
-                )} />
+                <IconComponent className={cn("w-7 h-7 drop-shadow-sm transition-colors", isSelected ? "text-primary" : fileConfig.color)} />
               )}
-              {/* File type badge - removed for minimal look */}
+              {/* File type badge */}
+              <span className={cn(
+                "absolute -bottom-1 -right-1 text-[9px] font-bold px-1.5 py-0.5 rounded-md border shadow-sm",
+                "bg-background/90 backdrop-blur-sm border-border/50",
+                isSelected ? "text-primary" : "text-muted-foreground"
+              )}>
+                {fileConfig.label}
+              </span>
             </div>
-            
+
             {/* File Name */}
-            <span className="text-xs font-medium text-center text-foreground/80 group-hover:text-foreground w-full break-words line-clamp-3 px-1 leading-tight">
+            <span className="text-[11px] font-medium text-center text-foreground/80 group-hover:text-foreground w-full break-words line-clamp-2 px-0.5 leading-snug mt-0.5">
               {query ? highlightMatch(file.name, query) : file.name}
             </span>
-            
+
             {/* Actions on hover */}
             <div
               className={cn(
-                "absolute top-2 right-2 transition-all duration-150",
-                isHovered ? "opacity-100" : "opacity-0 pointer-events-none"
+                "absolute top-1.5 right-1.5 transition-all duration-150",
+                isHovered ? "opacity-100 scale-100" : "opacity-0 scale-90 pointer-events-none"
               )}
               onClick={(e) => e.stopPropagation()}
               onContextMenu={(e) => e.stopPropagation()}
             >
               <DropdownMenu modal={false}>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 bg-background/50 backdrop-blur-sm hover:bg-background rounded-full shadow-sm">
+                  <Button variant="ghost" size="icon" className="h-6 w-6 bg-background/80 backdrop-blur-sm hover:bg-background rounded-full shadow-sm border border-border/40">
                     <MoreHorizontal className="w-3.5 h-3.5" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuContent align="end" className="w-48 rounded-xl">
                   {menuContent}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
           </ContextMenuTrigger>
-          <ContextMenuContent className="w-44 z-[100]">
+          <ContextMenuContent className="w-48 rounded-xl z-[100]">
             {contextMenuContent}
           </ContextMenuContent>
         </ContextMenu>
@@ -1185,26 +1230,29 @@ export const NotebookFolderView = forwardRef<NotebookFolderViewRef, NotebookFold
     return (
       <ContextMenu>
         <ContextMenuTrigger
-          onClick={() => onFileSelect(file)}
+          onClick={handleOpen}
           onMouseEnter={() => setHoveredFileId(file.id)}
           onMouseLeave={() => setHoveredFileId(null)}
           className={cn(
-            "group relative flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-200",
+            "group relative flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all duration-300",
             isSelected 
-              ? "bg-primary/10 border border-primary/20 shadow-sm" 
-              : "hover:bg-muted/50 border border-transparent hover:border-border/30"
+              ? "bg-primary/5 border border-primary/20 ring-1 ring-primary/10 shadow-sm" 
+              : "hover:bg-muted/40 border border-transparent hover:border-border/30"
           )}
         >
-          {/* File Icon with type color */}
+          {/* File Icon */}
           <div 
             className={cn(
-              "relative w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-all duration-200",
-              isSelected ? "bg-primary/15" : fileConfig.bgColor,
-              "group-hover:scale-105"
+              "relative w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300",
+              "bg-gradient-to-br ring-1",
+              fileConfig.gradient,
+              fileConfig.ring,
+              "group-hover:scale-105 group-hover:shadow-sm",
+              isSelected && "ring-2 ring-primary/30"
             )}
           >
             <IconComponent className={cn(
-              "w-5 h-5 transition-colors",
+              "w-5 h-5 drop-shadow-sm transition-colors",
               isSelected ? "text-primary" : fileConfig.color
             )} />
           </div>
@@ -1219,8 +1267,10 @@ export const NotebookFolderView = forwardRef<NotebookFolderViewRef, NotebookFold
             </p>
             <div className="flex items-center gap-2 mt-0.5">
               <span className={cn(
-                "text-[10px] font-semibold px-1.5 py-0.5 rounded",
-                isSelected ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+                "text-[9px] font-bold px-1.5 py-0.5 rounded-md border",
+                isSelected
+                  ? "bg-primary/10 text-primary border-primary/20"
+                  : "bg-muted/80 text-muted-foreground border-border/50"
               )}>
                 {fileConfig.label}
               </span>
@@ -1264,7 +1314,7 @@ export const NotebookFolderView = forwardRef<NotebookFolderViewRef, NotebookFold
             </DropdownMenu>
           </div>
         </ContextMenuTrigger>
-        <ContextMenuContent className="w-44 z-[100]">
+        <ContextMenuContent className="w-48 rounded-xl z-[100]">
           {contextMenuContent}
         </ContextMenuContent>
       </ContextMenu>
@@ -2102,6 +2152,16 @@ export const NotebookFolderView = forwardRef<NotebookFolderViewRef, NotebookFold
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* File Preview Dialog */}
+      <FilePreviewDialog
+        open={!!previewFile}
+        onOpenChange={(open) => { if (!open) setPreviewFile(null); }}
+        fileName={previewFile?.name || ""}
+        filePath={previewFile?.path || previewFile?.name || ""}
+        context={scope === "public" ? "public" : "private"}
+        onAskAI={previewFile ? () => onFileSelect(previewFile) : undefined}
+      />
     </div>
   );
 });

@@ -10,8 +10,16 @@ import { AIChatWrapper } from '@/components/ui/ai-chat-wrapper';
 import { NotificationDropdown } from '@/components/ui/notification-dropdown';
 import { motion } from 'motion/react';
 import { Sidebar, SidebarBody } from '@/components/ui/sidebar';
-import { ChartBarIcon, CreditCardIcon, BrainIcon, LayoutDashboard, Package } from 'lucide-react';
-import { IconNotebook, IconUsersGroup } from '@tabler/icons-react';
+import {
+  AnimatedNotebookIcon,
+  AnimatedDashboardIcon,
+  AnimatedTeamIcon,
+  AnimatedPackageIcon,
+  AnimatedBrainIcon,
+  AnimatedChartIcon,
+  AnimatedCreditCardIcon,
+  type AnimatedIconProps,
+} from '@/components/ui/animated-icons';
 import { UserDropdown } from '@/app/dashboard/UserDropdown';
 import { DashboardViewProvider, useDashboardNavigation, DashboardView, useDashboardView } from '@/lib/contexts/DashboardViewContext';
 import { DashboardViewRenderer } from '@/components/dashboard/views';
@@ -37,21 +45,24 @@ function NavCategoryLabel({ children }: { children: React.ReactNode }) {
 }
 
 // Navigation link component for dashboard views
-function DashboardNavLink({ label, view, icon }: { label: string; view: DashboardView; icon: React.ReactNode }) {
+function DashboardNavLink({ label, view, Icon }: { label: string; view: DashboardView; Icon: React.ComponentType<AnimatedIconProps> }) {
   const { navigateTo, isActive } = useDashboardNavigation();
   const { open, animate } = useSidebar();
   const active = isActive(view);
+  const [isHovered, setIsHovered] = useState(false);
 
   return (
     <button
       onClick={() => navigateTo(view)}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       className={cn(
         "flex items-center justify-start gap-2 group/sidebar py-2 w-full text-left",
         "transition-colors duration-150 text-foreground/70 dark:text-foreground/70",
         active && "bg-secondary/10 dark:bg-secondary/10 rounded-md px-2 -mx-2"
       )}
     >
-      {icon}
+      <Icon className="h-5 w-5 shrink-0" isHovered={isHovered} />
       <motion.span
         animate={{
           display: animate ? (open ? "inline-block" : "none") : "inline-block",
@@ -85,6 +96,7 @@ const viewTitleMap: Record<DashboardView, string> = {
   'features': 'Features',
   'chat': 'Chat',
   'train-ai': 'Train AI',
+  'welcome': 'Welcome',
 };
 
 // Header component that uses the view context
@@ -142,33 +154,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 		await supabase.auth.signOut();
 		window.location.href = '/signin';
 	};
-	const navItem = (label: string, view: DashboardView, icon: React.ReactNode) => ({ label, view, icon });
-	const navCategories: { label: string; links: { label: string; view: DashboardView; icon: React.ReactNode }[] }[] = [
+	const navItem = (label: string, view: DashboardView, Icon: React.ComponentType<AnimatedIconProps>) => ({ label, view, Icon });
+	const navCategories: { label: string; links: { label: string; view: DashboardView; Icon: React.ComponentType<AnimatedIconProps> }[] }[] = [
 		{
 			label: "Workspace",
 			links: [
-				navItem("Notebook", "notebook", <IconNotebook className="h-5 w-5 shrink-0" />),
-				navItem("Overview", "overview", <LayoutDashboard className="h-5 w-5 shrink-0" />),
-				navItem("Team", "team", <IconUsersGroup className="h-5 w-5 shrink-0" />),
-				navItem("Assets", "assets", <Package className="h-5 w-5 shrink-0" />),
+				navItem("Notebook", "notebook", AnimatedNotebookIcon),
+				navItem("Overview", "overview", AnimatedDashboardIcon),
+				navItem("Team", "team", AnimatedTeamIcon),
+				navItem("Assets", "assets", AnimatedPackageIcon),
 			],
 		},
 		{
 			label: "AI",
 			links: [
-				navItem("Train AI", "train-ai", <BrainIcon className="h-5 w-5 shrink-0" />),
+				navItem("Train AI", "train-ai", AnimatedBrainIcon),
 			],
 		},
 		{
 			label: "Analytics",
 			links: [
-				navItem("Analytics", "analytics", <ChartBarIcon className="h-5 w-5 shrink-0" />),
+				navItem("Analytics", "analytics", AnimatedChartIcon),
 			],
 		},
 		{
 			label: "Billing & Plans",
 			links: [
-				navItem("Billing", "billing", <CreditCardIcon className="h-5 w-5 shrink-0" />),
+				navItem("Billing", "billing", AnimatedCreditCardIcon),
 			],
 		},
 	];
@@ -183,11 +195,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 		}
 	}, [searchParams]);
 
-	// Show team onboarding if user has no teams and not loading, unless processing an invite
+	// Auto-create team from pending signup data, or fall back to onboarding
 	useEffect(() => {
-		if (!teamsLoading && !hasTeams && !inviteDialog.open) {
-			router.push('/dashboard/team-onboarding');
+		if (teamsLoading || hasTeams || inviteDialog.open) return;
+
+		const pendingTeamName = localStorage.getItem('pendingTeamName');
+		if (pendingTeamName) {
+			localStorage.removeItem('pendingTeamName');
+			fetch('/api/teams/create', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ name: pendingTeamName }),
+			})
+				.then(() => { window.location.href = '/dashboard'; })
+				.catch(() => { router.push('/dashboard/team-onboarding'); });
+			return;
 		}
+
+		router.push('/dashboard/team-onboarding');
 	}, [teamsLoading, hasTeams, inviteDialog.open, router]);
 
   const [open, setOpen] = useState(false);
@@ -222,7 +247,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     </motion.div>
                   </div>
                 </div>
-                <nav className="mt-8 flex flex-col gap-6" aria-label="Dashboard navigation">
+                <nav className={cn("mt-8 flex flex-col transition-[gap] duration-200 ease-in-out", open ? "gap-6" : "gap-0.5")} aria-label="Dashboard navigation">
                   {navCategories.map((category) => (
                     <div key={category.label} className="flex flex-col gap-2">
                       <NavCategoryLabel>{category.label}</NavCategoryLabel>

@@ -1,10 +1,10 @@
 import { getServerUser, createSupabaseServerClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { NotebookLayout } from "@/components/dashboard/notebook/NotebookLayout";
 import { hasActiveSubscription } from "@/lib/utils/subscription";
+import { OnboardingChecklist } from "@/components/onboarding/OnboardingChecklist";
 
-export default async function DashboardPage() {
+export default async function WelcomePage() {
 	const user = await getServerUser();
 	if (!user) redirect('/signin');
 
@@ -19,33 +19,12 @@ export default async function DashboardPage() {
 			.eq('id', user.id)
 			.maybeSingle();
 		teamId = profile?.default_team_id || '';
-
-		if (!teamId) {
-			const { data: teamMember } = await supabase
-				.from('team_members')
-				.select('team_id')
-				.eq('user_id', user.id)
-				.limit(1)
-				.maybeSingle();
-			
-			if (teamMember?.team_id) {
-				teamId = teamMember.team_id;
-				await supabase
-					.from('profiles')
-					.update({ default_team_id: teamId })
-					.eq('id', user.id);
-			}
-		}
 	}
 
-	if (!teamId) {
-		redirect('/dashboard/team-onboarding');
-	}
+	if (!teamId) redirect('/dashboard/team-onboarding');
 
 	const hasSub = await hasActiveSubscription(teamId, supabase);
-	if (!hasSub) {
-		redirect('/dashboard/welcome');
-	}
+	if (hasSub) redirect('/dashboard');
 
 	const { data: team } = await supabase
 		.from('teams')
@@ -53,11 +32,17 @@ export default async function DashboardPage() {
 		.eq('id', teamId)
 		.single();
 
+	const { count: memberCount } = await supabase
+		.from('team_members')
+		.select('id', { count: 'exact', head: true })
+		.eq('team_id', teamId);
+
 	return (
-		<NotebookLayout
+		<OnboardingChecklist
 			teamId={teamId}
 			teamName={team?.name || 'Team'}
-			teamLogo={team?.logo_url}
+			teamLogo={team?.logo_url || null}
+			memberCount={memberCount ?? 1}
 		/>
 	);
 }
