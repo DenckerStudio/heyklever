@@ -10,7 +10,10 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
-import { Copy, Paperclip, Upload, X, Lock, Globe, RefreshCcw } from 'lucide-react';
+import {
+  Copy, Paperclip, Upload, X, Lock, Globe, RefreshCcw,
+  Search, FileText, Sparkles, Tag, Brain, Zap,
+} from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import { cn } from '@/lib/utils';
 import { 
@@ -51,6 +54,7 @@ import {
   ChatInputGroupAddon,
   ChatInputSubmitButton,
   ChatInputGroupButton,
+  ChatInputMention,
   useChatInput,
 } from '@/components/ui/chat-input';
 import { useTeams } from '@/lib/hooks/useTeams';
@@ -234,6 +238,42 @@ export function GlobalChat({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Tool selection state
+  type ChatTool = 'search' | 'analyze' | 'web';
+  const [activeTools, setActiveTools] = useState<Set<ChatTool>>(new Set());
+
+  const toggleTool = useCallback((tool: ChatTool) => {
+    setActiveTools(prev => {
+      const next = new Set(prev);
+      if (next.has(tool)) next.delete(tool);
+      else next.add(tool);
+      return next;
+    });
+  }, []);
+
+  // File list for @ tagging
+  const [teamFiles, setTeamFiles] = useState<{ id: string; name: string; path: string }[]>([]);
+
+  useEffect(() => {
+    const fetchFiles = async () => {
+      try {
+        const res = await fetch('/api/teams/files?path=&metadata=true');
+        if (res.ok) {
+          const data = await res.json();
+          const files = (data.files || []).map((f: { id: string; name: string; path: string }) => ({
+            id: f.id || f.name,
+            name: f.name,
+            path: f.path || f.name,
+          }));
+          setTeamFiles(files);
+        }
+      } catch {
+        // Files not available
+      }
+    };
+    if (currentTeamId) fetchFiles();
+  }, [currentTeamId]);
+
   // Get team logo from useTeams hook if not provided as prop
   const { currentTeam, teams } = useTeams();
   const teamLogo = initialTeamLogo ?? (() => {
@@ -267,10 +307,17 @@ export function GlobalChat({
   const sendMessage = useCallback(async (content: string, file?: File) => {
     if ((!content && !file) || isLoading) return;
 
+    const toolPrefix = activeTools.size > 0
+      ? `[Tools: ${Array.from(activeTools).join(', ')}]\n`
+      : '';
+    const messageContent = file
+      ? (content ? `${content}\n\n[Attached: ${file.name}]` : `[Attached: ${file.name}]`)
+      : content;
+
     const userMessage: Message = {
       id: crypto.randomUUID(),
       role: 'user',
-      content: file ? (content ? `${content}\n\n[Attached: ${file.name}]` : `[Attached: ${file.name}]`) : content,
+      content: messageContent,
       timestamp: new Date(),
       ui: { name: 'You' },
     };
@@ -285,7 +332,7 @@ export function GlobalChat({
 
     try {
       const result = await chatService.sendMessageStreaming(
-        content || (file ? `I have uploaded ${file.name}` : ''),
+        toolPrefix + (content || (file ? `I have uploaded ${file.name}` : '')),
         {
           sessionId: conversationId || undefined,
           file,
@@ -595,7 +642,7 @@ export function GlobalChat({
                                 const emoji = source.relevance === "high" ? "🟢" 
                                   : source.relevance === "medium" ? "🟡" : "🔴";
                                 const fileExt = source.file_name.split(".").pop()?.toLowerCase() || "";
-                                const viewableTypes = ["pdf", "png", "jpg", "jpeg", "gif", "webp", "svg", "txt", "md", "json", "html", "htm", "csv", "xml", "yaml", "yml"];
+                                const viewableTypes = ["pdf", "png", "jpg", "jpeg", "gif", "webp", "svg", "txt", "md", "json", "html", "htm", "csv", "xml", "yaml", "yml", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "odt", "ods", "odp"];
                                 const isViewable = viewableTypes.includes(fileExt);
                                 
                                 return (
@@ -690,119 +737,226 @@ export function GlobalChat({
           <ChatMessageAreaScrollButton alignment="center" />
         </ChatMessageArea>
 
-        {/* Input */}
-        <div className="px-2 py-4">
-          {/* File Staging Indicator */}
-          {selectedFile && allowFileUpload && (
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              className="mb-2 mx-2 px-3 py-2 bg-muted rounded-md border border-border flex items-center justify-between"
-            >
-              <div className="flex items-center gap-2">
-                <Paperclip className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm font-medium">{selectedFile.name}</span>
-                <span className="text-xs text-muted-foreground">
-                  ({(selectedFile.size / 1024).toFixed(1)} KB)
-                </span>
-              </div>
-              <button 
-                onClick={() => setSelectedFile(null)}
-                className="p-1 hover:bg-background rounded-full transition-colors"
+        {/* Input Area */}
+        <div className="px-3 pb-3 pt-1">
+          {/* File Staging */}
+          <AnimatePresence>
+            {selectedFile && allowFileUpload && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
               >
-                <X className="w-4 h-4 text-muted-foreground" />
-              </button>
-            </motion.div>
-          )}
-
-          <ChatInput onSubmit={handleSubmit} isStreaming={isLoading}>
-            <ChatInputEditor
-              value={value}
-              onChange={onChange}
-              placeholder={placeholderText || (clientName ? `Ask ${clientName} a question...` : "Type a message...")}
-            />
-            <ChatInputGroupAddon align="block-end">
-              {allowFileUpload && variant === 'team' && (
-                <>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    className="hidden"
-                    onChange={handleFileSelect}
-                  />
-                  <ChatInputGroupButton 
-                    onClick={() => fileInputRef.current?.click()}
-                    variant="ghost" 
-                    size="icon-sm"
-                    className={cn(
-                      "rounded-full mr-1",
-                      selectedFile && "text-primary bg-primary/10"
-                    )}
-                    disabled={isLoading}
+                <div className="mb-2 px-3 py-2 bg-primary/5 rounded-xl border border-primary/20 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1 rounded-md bg-primary/10">
+                      <Paperclip className="w-3.5 h-3.5 text-primary" />
+                    </div>
+                    <span className="text-sm font-medium truncate max-w-[200px]">{selectedFile.name}</span>
+                    <span className="text-[10px] text-muted-foreground bg-muted/50 px-1.5 py-0.5 rounded">
+                      {(selectedFile.size / 1024).toFixed(0)} KB
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setSelectedFile(null)}
+                    className="p-1 hover:bg-background/80 rounded-full transition-colors"
                   >
-                    <Paperclip className="size-4" />
-                    <span className="sr-only">Attach file</span>
-                  </ChatInputGroupButton>
-                </>
-              )}
+                    <X className="w-3.5 h-3.5 text-muted-foreground" />
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-              {/* Context Switch - Only for team variant with allowContextSwitch */}
-              {variant === 'team' && allowContextSwitch && (
-                <div className="flex justify-center">
-                  <div className="flex items-center dark:bg-muted/70 bg-muted-foreground/10 rounded-full scale-90 origin-bottom">
+          {/* Tool Selection Pills */}
+          {variant === 'team' && (
+            <div className="flex items-center gap-1.5 mb-2 px-1">
+              <ToolPill
+                icon={Search}
+                label="Search"
+                active={activeTools.has('search')}
+                onClick={() => toggleTool('search')}
+              />
+              <ToolPill
+                icon={Brain}
+                label="Analyze"
+                active={activeTools.has('analyze')}
+                onClick={() => toggleTool('analyze')}
+              />
+              <ToolPill
+                icon={Zap}
+                label="Web"
+                active={activeTools.has('web')}
+                onClick={() => toggleTool('web')}
+              />
+
+              {/* Context Switch */}
+              {allowContextSwitch && (
+                <div className="ml-auto flex items-center">
+                  <div className="flex items-center dark:bg-muted/50 bg-muted-foreground/5 rounded-full p-0.5 border border-border/30">
                     <button
                       onClick={() => setContext("private")}
                       className={cn(
-                        "relative flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-full transition-all duration-200 ease-in-out z-10",
+                        "relative flex items-center gap-1 px-2.5 py-1 text-[10px] font-medium rounded-full transition-all duration-200 z-10",
                         context === "private"
-                          ? "text-foreground shadow-sm"
+                          ? "text-foreground"
                           : "text-muted-foreground hover:text-foreground"
                       )}
                     >
                       {context === "private" && (
                         <motion.div
                           layoutId="active-context-global"
-                          className="absolute inset-0 bg-background/80 rounded-full"
-                          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                          className="absolute inset-0 bg-background shadow-sm rounded-full border border-border/40"
+                          transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
                         />
                       )}
-                      <span className="relative z-10 flex items-center gap-1.5">
-                        <Lock className="w-3 h-3" />
+                      <span className="relative z-10 flex items-center gap-1">
+                        <Lock className="w-2.5 h-2.5" />
                         Private
                       </span>
                     </button>
                     <button
                       onClick={() => setContext("public")}
                       className={cn(
-                        "relative flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-full transition-all duration-200 ease-in-out z-10",
+                        "relative flex items-center gap-1 px-2.5 py-1 text-[10px] font-medium rounded-full transition-all duration-200 z-10",
                         context === "public"
-                          ? "text-foreground shadow-sm"
+                          ? "text-foreground"
                           : "text-muted-foreground hover:text-foreground"
                       )}
                     >
                       {context === "public" && (
                         <motion.div
                           layoutId="active-context-global"
-                          className="absolute inset-0 bg-background/80 rounded-full"
-                          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                          className="absolute inset-0 bg-background shadow-sm rounded-full border border-border/40"
+                          transition={{ type: "spring", bounce: 0.2, duration: 0.5 }}
                         />
                       )}
-                      <span className="relative z-10 flex items-center gap-1.5">
-                        <Globe className="w-3 h-3" />
+                      <span className="relative z-10 flex items-center gap-1">
+                        <Globe className="w-2.5 h-2.5" />
                         Public
                       </span>
                     </button>
                   </div>
                 </div>
               )}
+            </div>
+          )}
 
-              <ChatInputSubmitButton
-                className="ml-auto"
+          {/* Chat Input */}
+          <div className="relative group">
+            <div className={cn(
+              "absolute -inset-0.5 rounded-2xl opacity-0 blur-sm transition-opacity duration-300",
+              "bg-gradient-to-r from-primary/20 via-purple-500/20 to-primary/20",
+              "group-focus-within:opacity-100"
+            )} />
+            <div className="relative">
+              <ChatInput
+                onSubmit={handleSubmit}
                 isStreaming={isLoading}
-              />
-            </ChatInputGroupAddon>
-          </ChatInput>
+                className={cn(
+                  "rounded-2xl border-border/40 bg-background/80 backdrop-blur-sm",
+                  "shadow-sm transition-shadow duration-300",
+                  "group-focus-within:shadow-md group-focus-within:border-primary/30"
+                )}
+              >
+                {/* File @ mention for tagging */}
+                {variant === 'team' && teamFiles.length > 0 && (
+                  <ChatInputMention
+                    type="file"
+                    trigger="@"
+                    items={teamFiles.map(f => ({ id: f.id, name: f.name }))}
+                    filter={(query, items) =>
+                      items.filter(item =>
+                        item.name.toLowerCase().includes(query.toLowerCase())
+                      ).slice(0, 8)
+                    }
+                  >
+                    {(item, isSelected) => (
+                      <div className={cn(
+                        "flex items-center gap-2 w-full px-1",
+                        isSelected && "text-primary"
+                      )}>
+                        <FileText className="w-3.5 h-3.5 shrink-0 text-muted-foreground" />
+                        <span className="text-sm truncate">{item.name}</span>
+                      </div>
+                    )}
+                  </ChatInputMention>
+                )}
+
+                <ChatInputEditor
+                  value={value}
+                  onChange={onChange}
+                  placeholder={placeholderText || (clientName ? `Ask ${clientName} a question...` : "Ask anything... Use @ to tag files")}
+                  className="text-sm"
+                />
+                <ChatInputGroupAddon align="block-end" className="gap-1 px-2 pb-2">
+                  {allowFileUpload && variant === 'team' && (
+                    <>
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        onChange={handleFileSelect}
+                      />
+                      <ChatInputGroupButton
+                        onClick={() => fileInputRef.current?.click()}
+                        variant="ghost"
+                        size="icon-sm"
+                        className={cn(
+                          "rounded-xl h-8 w-8 transition-colors",
+                          selectedFile
+                            ? "text-primary bg-primary/10 hover:bg-primary/20"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                        )}
+                        disabled={isLoading}
+                      >
+                        <Paperclip className="size-4" />
+                        <span className="sr-only">Attach file</span>
+                      </ChatInputGroupButton>
+                    </>
+                  )}
+
+                  {/* Tag files button */}
+                  {variant === 'team' && teamFiles.length > 0 && (
+                    <ChatInputGroupButton
+                      variant="ghost"
+                      size="icon-sm"
+                      className="rounded-xl h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                      disabled={isLoading}
+                      onClick={() => {
+                        const editor = document.querySelector('.tiptap') as HTMLElement;
+                        if (editor) {
+                          editor.focus();
+                          document.execCommand('insertText', false, '@');
+                        }
+                      }}
+                    >
+                      <Tag className="size-4" />
+                      <span className="sr-only">Tag file</span>
+                    </ChatInputGroupButton>
+                  )}
+
+                  <div className="flex-1" />
+
+                  <ChatInputSubmitButton
+                    isStreaming={isLoading}
+                    className={cn(
+                      "rounded-xl h-8 w-8 transition-all duration-200",
+                      "bg-primary hover:bg-primary/90 text-primary-foreground",
+                      "shadow-sm shadow-primary/20"
+                    )}
+                  />
+                </ChatInputGroupAddon>
+              </ChatInput>
+            </div>
+          </div>
+
+          {/* Powered by indicator */}
+          <div className="flex items-center justify-center gap-1.5 mt-2 opacity-40">
+            <Sparkles className="w-3 h-3" />
+            <span className="text-[10px] text-muted-foreground">Powered by Klever AI</span>
+          </div>
         </div>
       </div>
 
@@ -819,5 +973,43 @@ export function GlobalChat({
         />
       )}
     </>
+  );
+}
+
+// ─── Tool Pill Component ─────────────────────────────────────────────────────
+
+function ToolPill({
+  icon: Icon,
+  label,
+  active,
+  onClick,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <motion.button
+      onClick={onClick}
+      whileTap={{ scale: 0.95 }}
+      className={cn(
+        "flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium",
+        "border transition-all duration-200 cursor-pointer",
+        active
+          ? "bg-primary/10 border-primary/30 text-primary shadow-sm shadow-primary/10"
+          : "bg-muted/30 border-border/30 text-muted-foreground hover:bg-muted/50 hover:text-foreground hover:border-border/50"
+      )}
+    >
+      <Icon className="w-3 h-3" />
+      {label}
+      {active && (
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          className="w-1.5 h-1.5 rounded-full bg-primary"
+        />
+      )}
+    </motion.button>
   );
 }
