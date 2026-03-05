@@ -72,7 +72,7 @@ function ViewModeButton({
 // Loading fallback for 3D view
 function Sphere3DFallback() {
   return (
-    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted/30 via-background to-muted/20">
       <div className="text-center">
         <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto mb-3" />
         <p className="text-sm text-muted-foreground">Loading 3D visualization...</p>
@@ -310,7 +310,7 @@ export function KnowledgeVisualization3D({
               )}
 
               {mode === "cloud" && (
-                <div className="h-full p-6 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-y-auto">
+                <div className="h-full p-6 bg-gradient-to-br from-muted/30 via-background to-muted/20 overflow-y-auto">
                   <TopicCloud
                     topics={topics}
                     onTopicClick={handleTopicClick}
@@ -325,7 +325,7 @@ export function KnowledgeVisualization3D({
 
         {/* Empty state */}
         {topics.length === 0 && !isTransitioning && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 z-30">
+          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-muted/30 via-background to-muted/20 z-30">
             <div className="text-center">
               <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
                 <Sparkles className="h-8 w-8 text-muted-foreground/40" />

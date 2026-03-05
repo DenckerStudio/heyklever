@@ -35,21 +35,21 @@ export interface KnowledgeVisualizationProps {
   className?: string;
 }
 
-// Color palette for topics based on context
+// Color palette for topics — theme-aware with glassmorphism
 const getTopicColors = (context: "public" | "private", index: number) => {
   const publicColors = [
-    { bg: "from-blue-400/90 to-blue-600/90", glow: "bg-blue-500/40", border: "border-blue-300/40" },
-    { bg: "from-cyan-400/90 to-cyan-600/90", glow: "bg-cyan-500/40", border: "border-cyan-300/40" },
-    { bg: "from-sky-400/90 to-sky-600/90", glow: "bg-sky-500/40", border: "border-sky-300/40" },
-    { bg: "from-teal-400/90 to-teal-600/90", glow: "bg-teal-500/40", border: "border-teal-300/40" },
+    { bg: "from-blue-500/70 to-blue-600/50 dark:from-blue-400/60 dark:to-blue-600/40", glow: "bg-blue-500/30", border: "border-blue-400/30 dark:border-blue-300/20", text: "text-white dark:text-blue-50" },
+    { bg: "from-cyan-500/70 to-cyan-600/50 dark:from-cyan-400/60 dark:to-cyan-600/40", glow: "bg-cyan-500/30", border: "border-cyan-400/30 dark:border-cyan-300/20", text: "text-white dark:text-cyan-50" },
+    { bg: "from-sky-500/70 to-sky-600/50 dark:from-sky-400/60 dark:to-sky-600/40", glow: "bg-sky-500/30", border: "border-sky-400/30 dark:border-sky-300/20", text: "text-white dark:text-sky-50" },
+    { bg: "from-teal-500/70 to-teal-600/50 dark:from-teal-400/60 dark:to-teal-600/40", glow: "bg-teal-500/30", border: "border-teal-400/30 dark:border-teal-300/20", text: "text-white dark:text-teal-50" },
   ];
   const privateColors = [
-    { bg: "from-purple-400/90 to-purple-600/90", glow: "bg-purple-500/40", border: "border-purple-300/40" },
-    { bg: "from-violet-400/90 to-violet-600/90", glow: "bg-violet-500/40", border: "border-violet-300/40" },
-    { bg: "from-indigo-400/90 to-indigo-600/90", glow: "bg-indigo-500/40", border: "border-indigo-300/40" },
-    { bg: "from-fuchsia-400/90 to-fuchsia-600/90", glow: "bg-fuchsia-500/40", border: "border-fuchsia-300/40" },
+    { bg: "from-purple-500/70 to-purple-600/50 dark:from-purple-400/60 dark:to-purple-600/40", glow: "bg-purple-500/30", border: "border-purple-400/30 dark:border-purple-300/20", text: "text-white dark:text-purple-50" },
+    { bg: "from-violet-500/70 to-violet-600/50 dark:from-violet-400/60 dark:to-violet-600/40", glow: "bg-violet-500/30", border: "border-violet-400/30 dark:border-violet-300/20", text: "text-white dark:text-violet-50" },
+    { bg: "from-indigo-500/70 to-indigo-600/50 dark:from-indigo-400/60 dark:to-indigo-600/40", glow: "bg-indigo-500/30", border: "border-indigo-400/30 dark:border-indigo-300/20", text: "text-white dark:text-indigo-50" },
+    { bg: "from-fuchsia-500/70 to-fuchsia-600/50 dark:from-fuchsia-400/60 dark:to-fuchsia-600/40", glow: "bg-fuchsia-500/30", border: "border-fuchsia-400/30 dark:border-fuchsia-300/20", text: "text-white dark:text-fuchsia-50" },
   ];
-  
+
   const colors = context === "public" ? publicColors : privateColors;
   return colors[index % colors.length];
 };
@@ -171,84 +171,69 @@ const FloatingCircle = ({
   onClick: () => void;
   onHover: (hovering: boolean) => void;
   zoom: number;
-  colors: { bg: string; glow: string; border: string };
+  colors: { bg: string; glow: string; border: string; text?: string };
   hasDragged: boolean;
 }) => {
   const { x, y, size } = position;
-  
+
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Only trigger click if there was no drag
-    if (!hasDragged) {
-      onClick();
-    }
+    if (!hasDragged) onClick();
   };
-  
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0 }}
       animate={{
         opacity: 1,
-        scale: isSelected ? 1.2 : isHovered ? 1.1 : 1,
+        scale: isSelected ? 1.15 : isHovered ? 1.08 : 1,
         x: x - size / 2,
         y: y - size / 2,
       }}
       exit={{ opacity: 0, scale: 0 }}
-      transition={{ 
-        type: "spring", 
-        stiffness: 200, 
-        damping: 20,
-        scale: { duration: 0.2 }
+      transition={{
+        type: "spring",
+        stiffness: 260,
+        damping: 22,
+        scale: { duration: 0.2 },
       }}
-      whileHover={{ scale: 1.15 }}
+      whileHover={{ scale: 1.12 }}
       onClick={handleClick}
       onMouseEnter={() => onHover(true)}
       onMouseLeave={() => onHover(false)}
       className={cn(
         "absolute cursor-pointer group",
         "flex items-center justify-center text-center",
-        "rounded-full backdrop-blur-md",
-        `border-2 ${colors.border}`,
-        "shadow-xl hover:shadow-2xl transition-all duration-300",
+        "rounded-full backdrop-blur-xl",
+        `border ${colors.border}`,
+        "shadow-lg hover:shadow-2xl transition-shadow duration-300",
         `bg-gradient-to-br ${colors.bg}`,
-        isSelected && "ring-4 ring-white/60 ring-offset-2 ring-offset-transparent z-30",
+        isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background z-30",
         isHovered && "z-20"
       )}
-      style={{
-        width: size,
-        height: size,
-      }}
+      style={{ width: size, height: size }}
     >
-      {/* Inner content */}
-      <div className="flex flex-col items-center px-3 overflow-hidden">
-        <span className="text-white text-sm font-semibold truncate max-w-full leading-tight drop-shadow-md">
+      <div className={cn("flex flex-col items-center px-3 gap-0.5 overflow-hidden", colors.text || "text-white")}>
+        <span className="text-[13px] font-bold truncate max-w-full leading-tight drop-shadow-sm">
           {topic.topic}
         </span>
-        <span className="text-white/90 text-xs mt-0.5 font-medium">
+        <span className="text-[10px] opacity-80 font-medium">
           {topic.count} doc{topic.count !== 1 ? "s" : ""}
         </span>
       </div>
-      
-      {/* Pulse effect on hover */}
+
+      {/* Outer glow on hover/select */}
       <motion.div
-        className={cn(
-          "absolute inset-0 rounded-full",
-          colors.glow,
-          "blur-xl -z-10 opacity-0"
-        )}
+        className={cn("absolute inset-0 rounded-full", colors.glow, "blur-xl -z-10")}
         animate={{
-          opacity: isHovered || isSelected ? 0.6 : 0,
-          scale: isHovered || isSelected ? 1.3 : 1,
+          opacity: isHovered || isSelected ? 0.5 : 0,
+          scale: isHovered || isSelected ? 1.4 : 1,
         }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: 0.25 }}
       />
-      
-      {/* Ambient glow */}
-      <div className={cn(
-        "absolute inset-0 rounded-full",
-        colors.glow,
-        "blur-2xl -z-20 opacity-30"
-      )} />
+
+      {/* Ambient halo */}
+      <div className={cn("absolute inset-0 rounded-full", colors.glow, "blur-3xl -z-20 opacity-20")} />
     </motion.div>
   );
 };
@@ -525,8 +510,8 @@ export function KnowledgeVisualization({
         ref={containerRef}
         className={cn(
           "relative w-full h-full overflow-hidden rounded-2xl",
-          "bg-gradient-to-br from-muted/20 via-background to-muted/30",
-          "border border-border/20",
+          "bg-gradient-to-br from-muted/10 via-background to-muted/20",
+          "border border-border/30",
           isDragging ? "cursor-grabbing" : "cursor-grab"
         )}
         onMouseDown={handleMouseDown}
@@ -620,7 +605,7 @@ export function KnowledgeVisualization({
   );
 }
 
-// Topic Cloud alternative view
+// Topic Cloud alternative view — modern pill tags
 export function TopicCloud({
   topics,
   onTopicClick,
@@ -635,32 +620,37 @@ export function TopicCloud({
     <div className={cn("w-full", className)}>
       <div className="flex flex-wrap gap-2">
         {topics.map((topic, index) => {
-          const sizeClass = topic.count / maxCount > 0.7 
-            ? "text-base px-3 py-1.5" 
-            : topic.count / maxCount > 0.4 
-              ? "text-sm px-2.5 py-1" 
-              : "text-xs px-2 py-0.5";
-          
+          const ratio = topic.count / maxCount;
+          const sizeClass = ratio > 0.7
+            ? "text-sm px-4 py-2"
+            : ratio > 0.4
+              ? "text-[13px] px-3 py-1.5"
+              : "text-xs px-2.5 py-1";
+
+          const isPublic = topic.context === "public";
+          const selected = selectedTopic === topic.topic;
+
           return (
             <motion.button
               key={`${topic.topic}-${topic.context}`}
-              initial={{ opacity: 0, scale: 0.8 }}
+              initial={{ opacity: 0, scale: 0.85 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: index * 0.02 }}
-              whileHover={{ scale: 1.05 }}
+              transition={{ delay: index * 0.015, type: "spring", stiffness: 300, damping: 20 }}
+              whileHover={{ scale: 1.06, y: -1 }}
+              whileTap={{ scale: 0.97 }}
               onClick={() => onTopicClick?.(topic)}
               className={cn(
-                "rounded-full border transition-all duration-200",
-                "backdrop-blur-sm font-medium",
+                "rounded-xl border font-semibold transition-all duration-200",
+                "backdrop-blur-sm shadow-sm hover:shadow-md",
                 sizeClass,
-                topic.context === "public"
-                  ? "bg-blue-100/80 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800 hover:bg-blue-200 dark:hover:bg-blue-900/50"
-                  : "bg-purple-100/80 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 hover:bg-purple-200 dark:hover:bg-purple-900/50",
-                selectedTopic === topic.topic && "ring-2 ring-primary/50"
+                isPublic
+                  ? "bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200/80 dark:border-blue-800/50 hover:bg-blue-100 dark:hover:bg-blue-900/40"
+                  : "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200/80 dark:border-purple-800/50 hover:bg-purple-100 dark:hover:bg-purple-900/40",
+                selected && "ring-2 ring-primary/60 shadow-md"
               )}
             >
               {topic.topic}
-              <span className="ml-1.5 opacity-60">({topic.count})</span>
+              <span className="ml-1.5 opacity-50 font-normal">{topic.count}</span>
             </motion.button>
           );
         })}

@@ -26,7 +26,7 @@ import {
   type DocumentInfo,
 } from "@/components/ui/knowledge-sitemap";
 import { KnowledgeVisualization3D } from "@/components/ui/knowledge-visualization-3d";
-import { Sparkles, Map, Plus, RefreshCw, Loader2, Calendar, Clock, LayoutDashboard, FileText, ChevronDown, ChevronUp } from "lucide-react";
+import { Sparkles, Map, Plus, RefreshCw, Loader2, Calendar, Clock, LayoutDashboard, FileText, ChevronDown, ChevronUp, Maximize2, Minimize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -416,73 +416,16 @@ export function KnowledgeBaseView({
         <div className="flex-1 overflow-y-auto min-h-0">
           <TabsContent value="overview" className="m-0 h-full p-6 pt-0">
             <div className="space-y-6">
-              {/* Knowledge Topics – collapsible canvas */}
-              <div className="rounded-2xl border border-border/30 bg-gradient-to-br from-card via-card to-muted/20 overflow-hidden shadow-sm">
-                {canvasCollapsed ? (
-                  <button
-                    type="button"
-                    onClick={toggleCanvasCollapsed}
-                    className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left hover:bg-muted/20 transition-colors"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 to-violet-500/10 shrink-0">
-                        <Sparkles className="h-4 w-4 text-primary" />
-                      </div>
-                      <div className="min-w-0">
-                        <span className="font-semibold text-foreground">Knowledge Topics</span>
-                        <span className="text-muted-foreground text-sm ml-2">· {topics.length} topics discovered</span>
-                      </div>
-                    </div>
-                    <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
-                  </button>
-                ) : (
-                  <>
-                    <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-border/20">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 to-violet-500/10">
-                          <Sparkles className="h-4 w-4 text-primary" />
-                        </div>
-                        <div>
-                          <h3 className="text-sm font-semibold">Knowledge Topics</h3>
-                          <p className="text-xs text-muted-foreground">{topics.length} topics discovered across your documents</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 shrink-0 gap-1"
-                          onClick={toggleCanvasCollapsed}
-                        >
-                          <ChevronUp className="h-3.5 w-3.5" />
-                          Collapse
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="relative h-[420px] w-full bg-gradient-to-b from-transparent to-muted/10">
-                      {visualizationMode === "3d" ? (
-                        <KnowledgeVisualization3D
-                          topics={topics}
-                          teamId={teamId}
-                          onTopicClick={handleTopicClick}
-                          selectedTopic={selectedTopic}
-                          className="w-full h-full"
-                          defaultMode="sphere"
-                          isFullscreen={false}
-                        />
-                      ) : (
-                        <div className="h-full overflow-y-auto p-4 pt-2">
-                          <TopicCloud
-                            topics={topics}
-                            onTopicClick={handleTopicClick}
-                            selectedTopic={selectedTopic}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
+              {/* Knowledge Topics – collapsible + fullscreen canvas */}
+              <KnowledgeTopicsCanvas
+                topics={topics}
+                teamId={teamId}
+                collapsed={canvasCollapsed}
+                onToggleCollapse={toggleCanvasCollapsed}
+                visualizationMode={visualizationMode}
+                selectedTopic={selectedTopic}
+                onTopicClick={handleTopicClick}
+              />
 
               {/* Stat cards */}
               <BentoGrid
@@ -572,6 +515,109 @@ export function KnowledgeBaseView({
           </TabsContent>
         </div>
       </Tabs>
+    </div>
+  );
+}
+
+function KnowledgeTopicsCanvas({
+  topics,
+  teamId,
+  collapsed,
+  onToggleCollapse,
+  visualizationMode,
+  selectedTopic,
+  onTopicClick,
+}: {
+  topics: TopicData[];
+  teamId: string;
+  collapsed: boolean;
+  onToggleCollapse: () => void;
+  visualizationMode: "3d" | "cloud";
+  selectedTopic: string | null;
+  onTopicClick: (topic: TopicData) => void;
+}) {
+  const [fullscreen, setFullscreen] = useState(false);
+
+  const header = (
+    <div className="flex items-center justify-between gap-3 px-5 py-3.5 border-b border-border/20">
+      <div className="flex items-center gap-3">
+        <div className="p-2 rounded-xl bg-gradient-to-br from-primary/20 to-violet-500/10">
+          <Sparkles className="h-4 w-4 text-primary" />
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold">Knowledge Topics</h3>
+          <p className="text-xs text-muted-foreground">{topics.length} topics discovered</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-1">
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setFullscreen(!fullscreen)} title={fullscreen ? "Exit fullscreen" : "Fullscreen"}>
+          {fullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+        </Button>
+        {!fullscreen && (
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onToggleCollapse}>
+            <ChevronUp className="h-3.5 w-3.5" />
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+
+  const canvas = (
+    <div className={cn("relative w-full", fullscreen ? "flex-1 min-h-0" : "h-[480px]")}>
+      {visualizationMode === "3d" ? (
+        <KnowledgeVisualization3D
+          topics={topics}
+          teamId={teamId}
+          onTopicClick={onTopicClick}
+          selectedTopic={selectedTopic}
+          className="w-full h-full"
+          defaultMode="sphere"
+          isFullscreen={fullscreen}
+        />
+      ) : (
+        <div className="h-full overflow-y-auto p-4 pt-2">
+          <TopicCloud topics={topics} onTopicClick={onTopicClick} selectedTopic={selectedTopic} />
+        </div>
+      )}
+    </div>
+  );
+
+  if (fullscreen) {
+    return (
+      <div className="fixed inset-0 z-50 bg-background flex flex-col">
+        {header}
+        {canvas}
+      </div>
+    );
+  }
+
+  if (collapsed) {
+    return (
+      <div className="rounded-2xl border border-border/30 bg-gradient-to-br from-card via-card to-muted/20 overflow-hidden shadow-sm">
+        <button
+          type="button"
+          onClick={onToggleCollapse}
+          className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left hover:bg-muted/20 transition-colors"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary/20 to-violet-500/10 shrink-0">
+              <Sparkles className="h-4 w-4 text-primary" />
+            </div>
+            <div className="min-w-0">
+              <span className="font-semibold text-foreground">Knowledge Topics</span>
+              <span className="text-muted-foreground text-sm ml-2">· {topics.length} topics</span>
+            </div>
+          </div>
+          <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl border border-border/30 bg-gradient-to-br from-card via-card to-muted/20 overflow-hidden shadow-sm">
+      {header}
+      {canvas}
     </div>
   );
 }
