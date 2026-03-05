@@ -21,7 +21,6 @@ import {
 import {
   Users,
   UserPlus,
-  Settings,
   BarChart3,
   Mail,
   Copy,
@@ -34,17 +33,11 @@ import {
   Eye,
   User,
   MoreHorizontal,
-  ExternalLink,
-  Sparkles,
   Building2,
   Calendar,
-  Link2,
   Trash2,
-  Image as ImageIcon,
   Cloud,
 } from "lucide-react";
-import { ClientUrlManager } from "@/components/settings/ClientUrlManager";
-import { DeleteTeamDangerZone } from "@/components/settings/DeleteTeamDangerZone";
 import { IntegrationsPanel } from "@/components/settings/IntegrationsPanel";
 import Image from "next/image";
 
@@ -70,7 +63,6 @@ const tabs = [
   { id: "members", label: "Members", icon: Users },
   { id: "invites", label: "Invites", icon: UserPlus },
   { id: "integrations", label: "Integrations", icon: Cloud },
-  { id: "settings", label: "Settings", icon: Settings },
 ] as const;
 
 type TabId = (typeof tabs)[number]["id"];
@@ -121,15 +113,10 @@ export default function TeamPage() {
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
   const [isLoadingInvites, setIsLoadingInvites] = useState(false);
   const [teamName, setTeamName] = useState("");
-  const [isRenaming, setIsRenaming] = useState(false);
   const [isUpdatingLogo, setIsUpdatingLogo] = useState(false);
   const [logoDialogOpen, setLogoDialogOpen] = useState(false);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [pdfViewerEnabled, setPdfViewerEnabled] = useState<boolean>(true);
-  const [isUpdatingPdfSetting, setIsUpdatingPdfSetting] = useState(false);
-  const [teamWebsite, setTeamWebsite] = useState("");
-  const [isSavingWebsite, setIsSavingWebsite] = useState(false);
   const [analytics, setAnalytics] = useState({
     totalMembers: 0,
     activeMembers: 0,
@@ -320,25 +307,6 @@ export default function TeamPage() {
     }
   };
 
-  const renameTeam = async () => {
-    if (!currentTeam || !teamName.trim()) return;
-    setIsRenaming(true);
-    try {
-      const { error } = await supabase
-        .from("teams")
-        .update({ name: teamName.trim() })
-        .eq("id", currentTeam.id);
-      if (error) {
-        setError(error.message);
-        return;
-      }
-      await refetch();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
-    } finally {
-      setIsRenaming(false);
-    }
-  };
 
   const updateTeamLogo = async (file: File) => {
     if (!currentTeam) return;
@@ -369,51 +337,16 @@ export default function TeamPage() {
     }
   };
 
-  const saveWebsite = async () => {
-    if (!currentTeam) return;
-    setIsSavingWebsite(true);
-    try {
-      const { error } = await supabase
-        .from("teams")
-        .update({ website: teamWebsite.trim() || null })
-        .eq("id", currentTeam.id);
-      if (error) {
-        setError(error.message);
-        return;
-      }
-      await refetch();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not update website");
-    } finally {
-      setIsSavingWebsite(false);
-    }
-  };
 
   // Effects
   useEffect(() => {
     if (currentTeam) {
       setTeamName(currentTeam.name);
-      setTeamWebsite(currentTeam.website ?? "");
       fetchMembers();
       fetchInvites();
     }
   }, [currentTeam, fetchMembers, fetchInvites]);
 
-  useEffect(() => {
-    const fetchPdfSetting = async () => {
-      if (!currentTeam) return;
-      try {
-        const response = await fetch(`/api/teams/settings?teamId=${currentTeam.id}`);
-        if (response.ok) {
-          const data = await response.json();
-          setPdfViewerEnabled(data.settings?.pdfViewerEnabled ?? true);
-        }
-      } catch (err) {
-        console.error("Failed to fetch PDF setting:", err);
-      }
-    };
-    fetchPdfSetting();
-  }, [currentTeam]);
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -635,48 +568,6 @@ export default function TeamPage() {
               </TabContent>
             )}
 
-            {activeTab === "settings" && (
-              <TabContent key="settings">
-                <SettingsTab
-                  currentTeam={currentTeam}
-                  canAdmin={canAdmin}
-                  teamName={teamName}
-                  setTeamName={setTeamName}
-                  isRenaming={isRenaming}
-                  onRename={renameTeam}
-                  teamWebsite={teamWebsite}
-                  setTeamWebsite={setTeamWebsite}
-                  isSavingWebsite={isSavingWebsite}
-                  onSaveWebsite={saveWebsite}
-                  logoPreview={logoPreview}
-                  isUpdatingLogo={isUpdatingLogo}
-                  onOpenLogoDialog={() => setLogoDialogOpen(true)}
-                  pdfViewerEnabled={pdfViewerEnabled}
-                  isUpdatingPdfSetting={isUpdatingPdfSetting}
-                  onTogglePdfSetting={async () => {
-                    const newValue = !pdfViewerEnabled;
-                    setIsUpdatingPdfSetting(true);
-                    try {
-                      const response = await fetch("/api/teams/settings", {
-                        method: "PATCH",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ settings: { pdfViewerEnabled: newValue } }),
-                      });
-                      if (response.ok) {
-                        setPdfViewerEnabled(newValue);
-                      } else {
-                        const data = await response.json();
-                        setError(data.error || "Could not update setting");
-                      }
-                    } catch (err) {
-                      setError(err instanceof Error ? err.message : "Could not update setting");
-                    } finally {
-                      setIsUpdatingPdfSetting(false);
-                    }
-                  }}
-                />
-              </TabContent>
-            )}
           </AnimatePresence>
         </div>
         </div>
@@ -1384,209 +1275,6 @@ function IntegrationsTab({ canAdmin }: { canAdmin: boolean }) {
   );
 }
 
-// Settings Tab
-function SettingsTab({
-  currentTeam,
-  canAdmin,
-  teamName,
-  setTeamName,
-  isRenaming,
-  onRename,
-  teamWebsite,
-  setTeamWebsite,
-  isSavingWebsite,
-  onSaveWebsite,
-  logoPreview,
-  isUpdatingLogo,
-  onOpenLogoDialog,
-  pdfViewerEnabled,
-  isUpdatingPdfSetting,
-  onTogglePdfSetting,
-}: {
-  currentTeam: any;
-  canAdmin: boolean;
-  teamName: string;
-  setTeamName: (name: string) => void;
-  isRenaming: boolean;
-  onRename: () => void;
-  teamWebsite: string;
-  setTeamWebsite: (url: string) => void;
-  isSavingWebsite: boolean;
-  onSaveWebsite: () => void;
-  logoPreview: string | null;
-  isUpdatingLogo: boolean;
-  onOpenLogoDialog: () => void;
-  pdfViewerEnabled: boolean;
-  isUpdatingPdfSetting: boolean;
-  onTogglePdfSetting: () => void;
-}) {
-  if (!canAdmin) {
-    return (
-      <GlassCard hover={false}>
-        <div className="text-center py-12">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-muted/20 flex items-center justify-center">
-            <Eye className="w-8 h-8 text-muted-foreground" />
-          </div>
-          <h3 className="text-lg font-medium text-foreground mb-2">View Only</h3>
-          <p className="text-sm text-muted-foreground">
-            You don&apos;t have permission to manage team settings.
-          </p>
-        </div>
-      </GlassCard>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      {/* Team Settings */}
-      <GlassCard hover={false}>
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 rounded-xl bg-primary/10">
-            <Settings className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-foreground">Team Settings</h3>
-            <p className="text-sm text-muted-foreground">Manage your team&apos;s basic settings</p>
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          {/* Team Name */}
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">Team Name</label>
-            <div className="flex items-center gap-3">
-              <Input
-                value={teamName}
-                onChange={(e) => setTeamName(e.target.value)}
-                placeholder="Team name"
-                className="flex-1 bg-muted/20 border-border/30"
-              />
-              <Button onClick={onRename} disabled={isRenaming || !teamName.trim()}>
-                {isRenaming ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  "Save"
-                )}
-              </Button>
-            </div>
-          </div>
-
-          {/* Website */}
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">Website</label>
-            <div className="flex items-center gap-3">
-              <div className="relative flex-1">
-                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                <Input
-                  type="url"
-                  value={teamWebsite}
-                  onChange={(e) => setTeamWebsite(e.target.value)}
-                  placeholder="https://example.com"
-                  className="pl-9 flex-1 bg-muted/20 border-border/30"
-                />
-              </div>
-              <Button onClick={onSaveWebsite} disabled={isSavingWebsite}>
-                {isSavingWebsite ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  "Save"
-                )}
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Your team&apos;s public website URL</p>
-          </div>
-
-          {/* Team Logo */}
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">Team Logo</label>
-            <div className="flex items-center gap-4">
-              <div className="relative w-16 h-16 rounded-2xl overflow-hidden bg-muted/30 border border-border/30">
-                {logoPreview ? (
-                  <Image src={logoPreview} alt="preview" fill className="object-cover" />
-                ) : currentTeam?.logo_url ? (
-                  <Image
-                    src={currentTeam.logo_url}
-                    alt={currentTeam.name}
-                    fill
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <ImageIcon className="w-6 h-6 text-muted-foreground" />
-                  </div>
-                )}
-              </div>
-              <div className="space-y-2">
-                <Button variant="outline" onClick={onOpenLogoDialog}>
-                  {isUpdatingLogo ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Uploading...
-                    </>
-                  ) : (
-                    "Change Logo"
-                  )}
-                </Button>
-                <p className="text-xs text-muted-foreground">Recommended: Square image, 512x512px</p>
-              </div>
-            </div>
-          </div>
-
-          {/* PDF Viewer Toggle */}
-          <div className="flex items-center justify-between p-4 rounded-xl bg-muted/20 border border-border/20">
-            <div>
-              <label className="text-sm font-medium text-foreground">
-                Allow opening documents from chat
-              </label>
-              <p className="text-xs text-muted-foreground mt-1">
-                Enable team members to open documents (PDF, images, text files) from sources in chat
-              </p>
-            </div>
-            <button
-              onClick={onTogglePdfSetting}
-              disabled={isUpdatingPdfSetting}
-              className={cn(
-                "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 transition-all duration-200 ease-in-out",
-                "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background",
-                pdfViewerEnabled
-                  ? "bg-emerald-500 border-emerald-500/50 focus:ring-emerald-500/50 hover:bg-emerald-600 dark:bg-emerald-600 dark:hover:bg-emerald-500"
-                  : "bg-muted border-border/50 focus:ring-muted hover:bg-muted/80",
-                isUpdatingPdfSetting && "opacity-50 cursor-not-allowed"
-              )}
-            >
-              <span
-                className={cn(
-                  "pointer-events-none inline-block h-5 w-5 transform rounded-full shadow-md ring-0 transition-all duration-200 ease-in-out",
-                  "bg-white dark:bg-white",
-                  pdfViewerEnabled ? "translate-x-5" : "translate-x-0"
-                )}
-              />
-            </button>
-          </div>
-        </div>
-      </GlassCard>
-
-      {/* Client URLs */}
-      <GlassCard hover={false}>
-        <ClientUrlManager teamId={currentTeam?.id || ""} />
-      </GlassCard>
-
-      {/* Danger Zone */}
-      <GlassCard hover={false} className="border-destructive/20 bg-destructive/5">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 rounded-xl bg-destructive/10">
-            <AlertCircle className="w-5 h-5 text-destructive" />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-destructive">Danger Zone</h3>
-            <p className="text-sm text-muted-foreground">Irreversible actions for your team</p>
-          </div>
-        </div>
-        <DeleteTeamDangerZone />
-      </GlassCard>
-    </div>
-  );
-}
 
 // Helper Components
 function MemberAvatar({

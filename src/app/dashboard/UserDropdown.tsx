@@ -3,7 +3,7 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import Image from 'next/image';
 import { useSidebar } from '@/components/ui/sidebar';
 import Link from 'next/link';
-import { Settings, UserCircle, Cog, LogOut, ChevronsUpDown, Sparkles } from 'lucide-react';
+import { Settings, LogOut, ChevronsUpDown, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'motion/react';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -140,20 +140,6 @@ export function UserDropdown({ avatarUrl, displayName, onSignOut }: { avatarUrl:
                 <Link href="/dashboard/settings">
                   <Settings className="size-4 text-neutral-500 dark:text-neutral-400" />
                   Settings
-                </Link>
-              </DropdownMenu.Item>
-              
-              <DropdownMenu.Item className="px-2 py-1.5 rounded-md text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer flex items-center gap-2 outline-none transition-colors" asChild>
-                <Link href="/dashboard/profile">
-                  <UserCircle className="size-4 text-neutral-500 dark:text-neutral-400" />
-                  Account
-                </Link>
-              </DropdownMenu.Item>
-              
-              <DropdownMenu.Item className="px-2 py-1.5 rounded-md text-sm text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 cursor-pointer flex items-center gap-2 outline-none transition-colors" asChild>
-                <Link href="/dashboard/preferences">
-                  <Cog className="size-4 text-neutral-500 dark:text-neutral-400" />
-                  Preferences
                 </Link>
               </DropdownMenu.Item>
             </div>
