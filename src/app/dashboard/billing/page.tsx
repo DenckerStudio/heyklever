@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
     Cpu, Sparkles, BrainCircuit, Users, CheckCircle2, 
     Zap, ShieldCheck, TrendingUp, ChevronRight
@@ -144,6 +144,29 @@ const EXTENSIONS = [
 		description: "Deploy specific tasks to specialized AI agents dynamically based on context.",
 		icon: AnimatedCpuIcon,
         iconColor: "text-blue-500",
+const EXTENSIONS = [
+	{
+		title: "RAG Automation",
+		description: "Retrieval-Augmented Generation to ground AI with your private data seamlessly.",
+		icon: <BrainCircuit className="w-8 h-8 text-primary" />,
+        span: { mobile: 1, tablet: 2, desktop: 2 },
+	},
+	{
+		title: "Knowledge Gap Filler",
+		description: "Automatically identify missing documentation and request intel from your team.",
+		icon: <Sparkles className="w-8 h-8 text-amber-500" />,
+        span: { mobile: 1, tablet: 1, desktop: 1 },
+	},
+	{
+		title: "AI Recommendations",
+		description: "Proactive, context-aware suggestions directly injected into your workflows.",
+		icon: <TrendingUp className="w-8 h-8 text-green-500" />,
+        span: { mobile: 1, tablet: 1, desktop: 1 },
+	},
+    {
+		title: "Smart Agent Routing",
+		description: "Deploy specific tasks to specialized AI agents dynamically based on context.",
+		icon: <Cpu className="w-8 h-8 text-blue-500" />,
         span: { mobile: 1, tablet: 2, desktop: 2 },
 	},
 ];
@@ -343,15 +366,14 @@ export default function BillingPage() {
                                 </div>
                             </div>
                             
-                            {/* Adjusted progress bar container */}
-                            <div className="relative flex items-center h-4 mt-2">
+                            <div className="relative pt-2">
                                 <Progress 
                                     value={percentUsed} 
-                                    className="h-3 rounded-full bg-secondary/50 overflow-hidden w-full absolute left-0" 
+                                    className="h-3 rounded-full bg-secondary/50 overflow-hidden" 
                                 />
                                 {/* Add a glow dot at the end of progress */}
                                 <div 
-                                    className="absolute w-4 h-4 rounded-full bg-primary shadow-[0_0_15px_rgba(var(--primary),0.8)] transition-all duration-500 ease-in-out z-10"
+                                    className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-primary shadow-[0_0_15px_rgba(var(--primary),0.8)] transition-all duration-500 ease-in-out"
                                     style={{ left: `calc(${percentUsed}% - 8px)` }}
                                 />
                             </div>
@@ -386,8 +408,28 @@ export default function BillingPage() {
                 </div>
                 
                 <BentoGrid columns={{ mobile: 1, tablet: 2, desktop: 4 }} gap="gap-4">
-                    {EXTENSIONS.map((ext) => (
-                        <ExtensionCard key={ext.id} ext={ext} />
+                    {EXTENSIONS.map((ext, i) => (
+                        <BentoGridItem 
+                            key={i} 
+                            span={ext.span}
+                            className="bg-card/30 hover:bg-card/50 border-border/20 hover:border-border/40 transition-all duration-500"
+                        >
+                            <div className="flex flex-col h-full justify-between gap-6">
+                                <div className="p-2 w-16 h-16 rounded-2xl bg-background/50 flex items-center justify-center border border-border/30 shadow-inner">
+                                    {ext.icon}
+                                </div>
+                                <div>
+                                    <h4 className="text-xl font-bold mb-2">{ext.title}</h4>
+                                    <p className="text-sm text-muted-foreground leading-relaxed">{ext.description}</p>
+                                </div>
+                                <div className="pt-4 mt-auto">
+                                    <Button variant="ghost" className="w-full justify-between hover:bg-primary/10 hover:text-primary group">
+                                        Enable Add-on
+                                        <ChevronRight className="w-4 h-4 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                                    </Button>
+                                </div>
+                            </div>
+                        </BentoGridItem>
                     ))}
                 </BentoGrid>
             </motion.div>
