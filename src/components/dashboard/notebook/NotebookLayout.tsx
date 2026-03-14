@@ -45,6 +45,7 @@ import { Button } from "@/components/ui/button";
 import { Modal, ModalBody, ModalContent, ModalFooter } from "@/components/ui/animated-modal";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useDashboardView } from "@/lib/contexts/DashboardViewContext";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -155,6 +156,7 @@ export function NotebookLayout({
   teamName,
   teamLogo,
 }: NotebookLayoutProps) {
+  const { navigateTo } = useDashboardView();
   // Load layout preferences from localStorage
   const loadLayoutPreferences = (): {
     leftPanelOpen: boolean;
@@ -1152,19 +1154,19 @@ export function NotebookLayout({
             )}
           </div>
 
-          {/* Resizer Handle */}
+          {/* Resizer Handle (tablet & up) */}
           <div
-            className="w-1 hover:w-1.5 cursor-col-resize bg-transparent hover:bg-primary/20 active:bg-primary/40 transition-all z-50 flex items-center justify-center group"
+            className="hidden md:flex w-1 hover:w-1.5 cursor-col-resize bg-transparent hover:bg-primary/20 active:bg-primary/40 transition-all z-50 items-center justify-center group"
             onMouseDown={startResizing}
           >
              <div className="w-0.5 h-8 bg-border/50 rounded-full group-hover:bg-primary/50 transition-colors" />
           </div>
 
-          {/* Right Column: Chat (Resizable) */}
+          {/* Right Column: Chat (Resizable, tablet & up) */}
           <div 
             ref={sidebarRef}
             style={{ width: chatWidth }} 
-            className="flex flex-col border-l border-border/40 bg-background/80 backdrop-blur-sm relative"
+            className="hidden md:flex flex-col border-l border-border/40 bg-background/80 backdrop-blur-sm relative"
           >
             {/* Chat Header */}
             <header className="h-14 px-4 flex items-center justify-between border-b border-border/30 bg-background/40 backdrop-blur-sm">
@@ -1225,6 +1227,22 @@ export function NotebookLayout({
             </div>
           </div>
 
+        </div>
+
+        {/* Floating Ask AI button (mobile only) */}
+        <div className="md:hidden pointer-events-none">
+          <div className="fixed bottom-5 right-4 z-40 pointer-events-auto">
+            <div className="bg-gradient-to-r from-primary via-fuchsia-500 to-blue-500 p-[2px] rounded-full shadow-[0_0_25px_rgba(168,85,247,0.7)]">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigateTo("chat")}
+                className="rounded-full px-5 py-2 text-sm font-semibold bg-background/95 text-foreground hover:bg-background hover:text-foreground"
+              >
+                Ask AI
+              </Button>
+            </div>
+          </div>
         </div>
 
         {/* New Folder Modal */}

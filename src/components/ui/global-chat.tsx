@@ -58,6 +58,7 @@ import {
   useChatInput,
 } from '@/components/ui/chat-input';
 import { useTeams } from '@/lib/hooks/useTeams';
+import { useRouter } from 'next/navigation';
 
 // ============================================================================
 // Types
@@ -100,6 +101,10 @@ export interface GlobalChatProps {
   allowedFileIds?: string[];
   /** Session ID for conversation continuity */
   sessionId?: string;
+  /** Enable text-to-speech controls for assistant messages */
+  enableTextToSpeech?: boolean;
+  /** Enable web search tool pill for client variant */
+  enableWebTool?: boolean;
 }
 
 // Internal message type with UI metadata
@@ -222,6 +227,8 @@ export function GlobalChat({
   fileAccessMode,
   allowedFileIds,
   sessionId: externalSessionId,
+  enableTextToSpeech,
+  enableWebTool,
 }: GlobalChatProps) {
   // State
   const [messages, setMessages] = useState<Message[]>([]);
@@ -237,6 +244,8 @@ export function GlobalChat({
   const [pdfViewerEnabled, setPdfViewerEnabled] = useState<boolean>(initialPdfViewerEnabled);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
 
   // Tool selection state
   type ChatTool = 'search' | 'analyze' | 'web';
@@ -302,6 +311,40 @@ export function GlobalChat({
 
   // Display name for the assistant
   const displayName = clientName || teamName || 'Klever AI';
+
+  const getPlainTextFromMessage = useCallback((m: Message): string => {
+    if (typeof m.content === 'string') return m.content;
+    if (Array.isArray(m.content)) {
+      return m.content.map((c) => c.content || '').join('\n');
+    }
+    return (m.content as StructuredMessage).content || '';
+  }, []);
+
+  const stopSpeaking = useCallback(() => {
+    if (typeof window === "undefined") return;
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      setSpeakingMessageId(null);
+    }
+  }, []);
+
+  const speakMessage = useCallback((m: Message) => {
+    if (typeof window === "undefined") return;
+    if (!('speechSynthesis' in window)) return;
+
+    const text = getPlainTextFromMessage(m);
+    if (!text.trim()) return;
+
+    // Stop any current speech first
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.onend = () => {
+      setSpeakingMessageId((current) => (current === m.id ? null : current));
+    };
+    setSpeakingMessageId(m.id);
+    window.speechSynthesis.speak(utterance);
+  }, [getPlainTextFromMessage]);
 
   // Send message handler
   const sendMessage = useCallback(async (content: string, file?: File) => {
@@ -553,6 +596,17 @@ export function GlobalChat({
                   <h3 className="font-semibold text-sm">{displayName}</h3>
                 </div>
               </div>
+              {/* Mobile close button to collapse chat */}
+              <button
+                type="button"
+                className="inline-flex md:hidden items-center justify-center rounded-full border border-border/60 bg-background/80 px-3 py-1 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+                onClick={() => {
+                  // Prefer dashboard notebook view when available
+                  router.push('/dashboard');
+                }}
+              >
+                Close
+              </button>
             </div>
           </div>
         )}
@@ -569,11 +623,7 @@ export function GlobalChat({
                     <ChatMessageAction 
                       label="Copy"
                       onClick={() => {
-                        const content = typeof m.content === 'string' 
-                          ? m.content 
-                          : (Array.isArray(m.content) 
-                              ? m.content.map(c => c.content || '').join('\n')
-                              : (m.content as StructuredMessage).content || '');
+                        const content = getPlainTextFromMessage(m);
                         navigator.clipboard.writeText(content);
                       }}
                     >
@@ -582,6 +632,21 @@ export function GlobalChat({
                     {!isUser && (
                       <ChatMessageAction label="Regenerate">
                         <RefreshCcw className="size-4" />
+                      </ChatMessageAction>
+                    )}
+                    {!isUser && enableTextToSpeech && (
+                      <ChatMessageAction
+                        label={speakingMessageId === m.id ? "Stop" : "Listen"}
+                        onClick={() => {
+                          if (speakingMessageId === m.id) {
+                            stopSpeaking();
+                          } else {
+                            speakMessage(m);
+                          }
+                        }}
+                      >
+                        {/* Reuse Zap icon to avoid new imports */}
+                        <Zap className="size-4" />
                       </ChatMessageAction>
                     )}
                   </ChatMessageActions>
@@ -770,29 +835,35 @@ export function GlobalChat({
           </AnimatePresence>
 
           {/* Tool Selection Pills */}
-          {variant === 'team' && (
+          {(variant === 'team' || enableWebTool) && (
             <div className="flex items-center gap-1.5 mb-2 px-1">
-              <ToolPill
-                icon={Search}
-                label="Search"
-                active={activeTools.has('search')}
-                onClick={() => toggleTool('search')}
-              />
-              <ToolPill
-                icon={Brain}
-                label="Analyze"
-                active={activeTools.has('analyze')}
-                onClick={() => toggleTool('analyze')}
-              />
-              <ToolPill
-                icon={Zap}
-                label="Web"
-                active={activeTools.has('web')}
-                onClick={() => toggleTool('web')}
-              />
+              {variant === 'team' && (
+                <>
+                  <ToolPill
+                    icon={Search}
+                    label="Search"
+                    active={activeTools.has('search')}
+                    onClick={() => toggleTool('search')}
+                  />
+                  <ToolPill
+                    icon={Brain}
+                    label="Analyze"
+                    active={activeTools.has('analyze')}
+                    onClick={() => toggleTool('analyze')}
+                  />
+                </>
+              )}
+              {(variant === 'team' || enableWebTool) && (
+                <ToolPill
+                  icon={Zap}
+                  label="Web"
+                  active={activeTools.has('web')}
+                  onClick={() => toggleTool('web')}
+                />
+              )}
 
               {/* Context Switch */}
-              {allowContextSwitch && (
+              {variant === 'team' && allowContextSwitch && (
                 <div className="ml-auto flex items-center">
                   <div className="flex items-center dark:bg-muted/50 bg-muted-foreground/5 rounded-full p-0.5 border border-border/30">
                     <button

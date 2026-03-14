@@ -80,6 +80,7 @@ import {
 } from "@/components/ui/tooltip";
 import { FilePreviewDialog } from "@/components/ui/file-preview-dialog";
 import { FileVisibilityMenu } from "@/components/ui/file-visibility-menu";
+import { FileUpload } from "@/components/ui/file-upload";
 
 interface NotebookFolderViewProps {
   onFileSelect: (file: DriveItem | null) => void;
@@ -364,7 +365,7 @@ export const NotebookFolderView = forwardRef<NotebookFolderViewRef, NotebookFold
   // File preview state
   const [previewFile, setPreviewFile] = useState<DriveItem | null>(null);
   
-  const { addUpload, updateUpload, uploads } = useUpload();
+  const { addUpload, updateUpload, uploads, uploadFile } = useUpload();
   
   // Standard color gradients (6 colors)
   const standardColors = [
@@ -944,11 +945,11 @@ export const NotebookFolderView = forwardRef<NotebookFolderViewRef, NotebookFold
   if (folders.length === 0) {
     return (
       <>
-        <div className="h-full overflow-y-auto p-4 scrollbar-thin flex items-center justify-center">
-          <div className="w-full max-w-[320px]">
+        <div className="h-full overflow-y-auto p-4 scrollbar-thin flex flex-col items-center justify-center">
+          <div className="w-full max-w-[600px] flex flex-col items-center gap-8">
             <div
               onClick={() => setIsCreateDialogOpen(true)}
-              className="cursor-pointer flex justify-center"
+              className="cursor-pointer flex flex-col items-center justify-center gap-3 w-full max-w-[320px]"
             >
               <AnimatedFolder
                 title="Create New Folder"
@@ -956,6 +957,21 @@ export const NotebookFolderView = forwardRef<NotebookFolderViewRef, NotebookFold
                 gradient="linear-gradient(135deg, #6b7280, #4b5563)"
                 className="opacity-80 hover:opacity-100 transition-opacity"
                 size="compact"
+              />
+            </div>
+            
+            <div className="flex items-center w-full">
+              <div className="h-px flex-1 bg-border/40"></div>
+              <span className="px-4 text-xs font-medium text-muted-foreground uppercase tracking-widest">Or</span>
+              <div className="h-px flex-1 bg-border/40"></div>
+            </div>
+
+            <div className="w-full">
+              <FileUpload
+                scope={scope}
+                onUpload={async (files) => {
+                  files.forEach((f) => uploadFile(f));
+                }}
               />
             </div>
           </div>
@@ -1495,21 +1511,39 @@ export const NotebookFolderView = forwardRef<NotebookFolderViewRef, NotebookFold
                 Create New Folder
               </span>
             </motion.button>
+            <div className="mb-4">
+              <FileUpload
+                scope={scope}
+                onUpload={async (files) => {
+                  files.forEach((f) => uploadFile(f));
+                }}
+              />
+            </div>
           </div>
         ) : (
-          <motion.button
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.99 }}
-            onClick={() => setIsCreateDialogOpen(true)}
-            className="w-full mb-4 flex items-center gap-3 px-3 py-2.5 rounded-lg border border-dashed border-border/60 hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 group"
-          >
-            <div className="w-8 h-8 rounded-lg bg-muted/50 group-hover:bg-primary/10 flex items-center justify-center transition-colors">
-              <FolderPlus className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+          <>
+            <motion.button
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+              onClick={() => setIsCreateDialogOpen(true)}
+              className="w-full mb-2 flex items-center gap-3 px-3 py-2.5 rounded-lg border border-dashed border-border/60 hover:border-primary/40 hover:bg-primary/5 transition-all duration-200 group"
+            >
+              <div className="w-8 h-8 rounded-lg bg-muted/50 group-hover:bg-primary/10 flex items-center justify-center transition-colors">
+                <FolderPlus className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+              </div>
+              <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                New Folder
+              </span>
+            </motion.button>
+            <div className="mb-4">
+              <FileUpload
+                scope={scope}
+                onUpload={async (files) => {
+                  files.forEach((f) => uploadFile(f));
+                }}
+              />
             </div>
-            <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-              New Folder
-            </span>
-          </motion.button>
+          </>
         )
       )}
       

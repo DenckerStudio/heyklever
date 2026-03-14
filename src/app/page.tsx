@@ -2,7 +2,6 @@ import { TimelineSection } from "@/components/sections/timeline";
 
 import { NavbarSection } from "@/components/sections/navbar/navbar";
 import FooterSection from "@/components/sections/footer/default";
-import CtaSection from "@/components/sections/cta/page";
 import { FeatureComparisonBlock } from "@/components/sections/feature-comparison-block";
 import { LetsWorkTogether } from "@/components/ui/lets-work-section";
 import FeaturesSection from "@/components/features-9";
@@ -24,9 +23,6 @@ export default function Home() {
       <section className="px-6 pb-20">
         <Testimonial />
         <LetsWorkTogether />
-      </section>
-      <section className="px-6 pb-20">
-        <CtaSection />
       </section>
       <section className="px-6 pb-20">
         <FeatureComparisonBlock />

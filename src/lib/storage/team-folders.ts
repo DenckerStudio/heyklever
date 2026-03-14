@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { minioClient, ensureTeamBucket, getTeamBucketName } from "@/lib/storage/minio";
 
 export type CreateTeamFolderResult = {
   success: boolean;
@@ -22,61 +23,50 @@ export async function createTeamFolder(
   userId: string
 ): Promise<CreateTeamFolderResult> {
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string;
-    const bucket = process.env.SUPABASE_STORAGE_BUCKET || "team-files";
+    const bucket = await ensureTeamBucket(teamId);
 
-    if (!supabaseUrl || !serviceKey) {
-      return { success: false, message: "Supabase env not configured" };
-    }
-
-    const admin = createClient(supabaseUrl, serviceKey);
-
-    // Ensure bucket exists (ignore if already exists)
-    await admin.storage.createBucket(bucket, { public: false }).catch(() => {});
-
-    // Create team root folder with a .keep file
-    const basePath = `teams/${teamId}`;
-    const keepPath = `${basePath}/.keep`;
-    const membersPath = `${basePath}/Members/.keep`;
-    const userMemberPath = `${basePath}/Members/${userId}/.keep`;
+    // Files live directly in the bucket root. Create .keep and Members structure only.
+    const keepPath = ".keep";
+    const membersPath = "Members/.keep";
+    const userMemberPath = `Members/${userId}/.keep`;
 
     await Promise.all([
-      admin.storage.from(bucket).upload(keepPath, "", { upsert: true, contentType: "text/plain" }),
-      admin.storage.from(bucket).upload(membersPath, "", { upsert: true, contentType: "text/plain" }),
-      admin.storage.from(bucket).upload(userMemberPath, "", { upsert: true, contentType: "text/plain" }),
-    ]).catch((err) => console.error("Error creating folder structure:", err));
+      minioClient.putObject(bucket, keepPath, ""),
+      minioClient.putObject(bucket, membersPath, ""),
+      minioClient.putObject(bucket, userMemberPath, ""),
+    ]).catch((err) => console.error("Error creating MinIO folder structure:", err));
 
-    // Store team folder in database (no longer using Public/Private subfolders)
+    // Store team folder in database (folder_id empty = root of bucket)
     const supabase = await createSupabaseServerClient();
     const { error: dbError } = await supabase.from("team_folders").insert({
       team_id: teamId,
-      provider: "supabase_storage",
-      folder_id: basePath,
-      folder_name: `${teamName} - Supabase`,
-      folder_url: `supabase://${bucket}/${basePath}`,
+      provider: "minio",
+      folder_id: "",
+      folder_name: `${teamName} - MinIO`,
+      folder_url: `minio://${bucket}`,
       storage_bucket: bucket,
-      public_folder_id: basePath,
-      private_folder_id: basePath,
+      public_folder_id: "",
+      private_folder_id: "",
     });
 
     if (dbError) {
-      console.error("Error storing team folder:", dbError);
+      console.error("Error storing MinIO team folder:", dbError);
       return { success: false, message: `Failed to store folder info: ${dbError.message}` };
     }
 
     return {
       success: true,
-      folderId: basePath,
-      folderName: `${teamName} - Supabase`,
-      folderUrl: `supabase://${bucket}/${basePath}`,
-      publicFolderId: basePath,
-      privateFolderId: basePath,
+      folderId: "",
+      folderName: `${teamName} - MinIO`,
+      folderUrl: `minio://${bucket}`,
+      publicFolderId: "",
+      privateFolderId: "",
     };
   } catch (error) {
     return {
       success: false,
-      message: `Failed to create Supabase storage folders: ${error instanceof Error ? error.message : "Unknown error"}`,
+      message: `Failed to create MinIO storage folders: ${error instanceof Error ? error.message : "Unknown error"}`,
     };
   }
 }
+

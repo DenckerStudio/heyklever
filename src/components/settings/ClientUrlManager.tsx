@@ -64,6 +64,27 @@ export interface ClientUrlSettings {
   // File access
   fileAccessMode?: FileAccessMode;
   allowedFileIds?: string[];
+  // Page template & access
+  pageVariant?: "simple_chat" | "info_sidebar" | "kiosk_fullscreen" | "authenticated_workspace";
+  requireAuth?: boolean;
+  // Public data panel (fixed slots for simplicity)
+  publicPanelTitle?: string;
+  publicPanelBody?: string;
+  kpi1Label?: string;
+  kpi1Value?: string;
+  kpi2Label?: string;
+  kpi2Value?: string;
+  kpi3Label?: string;
+  kpi3Value?: string;
+  faq1Question?: string;
+  faq1Answer?: string;
+  faq2Question?: string;
+  faq2Answer?: string;
+  faq3Question?: string;
+  faq3Answer?: string;
+  // Advanced behaviour
+  textToSpeechEnabled?: boolean;
+  webSearchEnabled?: boolean;
 }
 
 interface ClientUrl {
@@ -977,6 +998,196 @@ function ClientUrlCard({
                         disabled={isUpdating}
                       />
                     </SettingRow>
+                  </div>
+                </SettingsSection>
+
+                {/* Template & Access Section */}
+                <SettingsSection title="Page Template & Access" icon={Globe}>
+                  <div className="space-y-4">
+                    {/* Template Variant */}
+                    <SettingRow
+                      label="Template"
+                      description="Choose the layout preset for this client page"
+                    >
+                      <Select
+                        value={settings.pageVariant || "simple_chat"}
+                        onValueChange={(value) =>
+                          handleSelectChange("pageVariant", value as ClientUrlSettings["pageVariant"])
+                        }
+                      >
+                        <SelectTrigger className="w-[210px] h-9 text-sm">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="simple_chat">
+                            <span className="text-sm">Simple chat (full screen)</span>
+                          </SelectItem>
+                          <SelectItem value="info_sidebar">
+                            <span className="text-sm">Chat + info sidebar</span>
+                          </SelectItem>
+                          <SelectItem value="kiosk_fullscreen">
+                            <span className="text-sm">Kiosk display (office monitor)</span>
+                          </SelectItem>
+                          <SelectItem value="authenticated_workspace">
+                            <span className="text-sm">Authenticated assistant workspace</span>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </SettingRow>
+
+                    {/* Require Auth */}
+                    <SettingRow
+                      label="Require Sign‑in"
+                      description="Users must be signed in to access this page"
+                    >
+                      <ToggleSwitch
+                        enabled={settings.requireAuth ?? false}
+                        onChange={() => handleToggle("requireAuth")}
+                        disabled={isUpdating}
+                      />
+                    </SettingRow>
+
+                    {/* Text-to-speech */}
+                    <SettingRow
+                      label="Text‑to‑speech"
+                      description="Show a Listen button on AI messages"
+                    >
+                      <ToggleSwitch
+                        enabled={settings.textToSpeechEnabled ?? false}
+                        onChange={() => handleToggle("textToSpeechEnabled")}
+                        disabled={isUpdating}
+                      />
+                    </SettingRow>
+
+                    {/* Web search tool */}
+                    <SettingRow
+                      label="Web search tool"
+                      description="Allow this assistant to use web search when answering"
+                    >
+                      <ToggleSwitch
+                        enabled={settings.webSearchEnabled ?? false}
+                        onChange={() => handleToggle("webSearchEnabled")}
+                        disabled={isUpdating}
+                      />
+                    </SettingRow>
+                  </div>
+                </SettingsSection>
+
+                {/* Public Data Panel Section */}
+                <SettingsSection title="Public Data Panel" icon={MessageSquare}>
+                  <div className="space-y-4">
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-foreground">Panel title</label>
+                      <Input
+                        value={settings.publicPanelTitle || ""}
+                        onChange={(e) => handleTextChange("publicPanelTitle", e.target.value)}
+                        onBlur={handleBlur}
+                        placeholder="e.g., IT Support Desk, Student Information"
+                        className="h-9 text-sm bg-background/60"
+                        maxLength={80}
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-medium text-foreground">Intro text</label>
+                      <textarea
+                        value={settings.publicPanelBody || ""}
+                        onChange={(e) => handleTextChange("publicPanelBody", e.target.value)}
+                        onBlur={handleBlur}
+                        placeholder="Short description for the sidebar or kiosk panel"
+                        className={cn(
+                          "w-full px-3 py-2 rounded-lg bg-background/60 border border-border/40 text-foreground text-sm resize-none transition-colors",
+                          "focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50"
+                        )}
+                        rows={3}
+                        maxLength={260}
+                      />
+                    </div>
+
+                    {/* KPIs */}
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-[0.18em]">
+                        KPIs (optional)
+                      </p>
+                      {[1, 2, 3].map((index) => {
+                        const labelKey = `kpi${index}Label` as keyof ClientUrlSettings;
+                        const valueKey = `kpi${index}Value` as keyof ClientUrlSettings;
+                        const label = settings[labelKey] as string | undefined;
+                        const value = settings[valueKey] as string | undefined;
+                        const hasContent = label || value;
+
+                        return (
+                          <div key={index} className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-2">
+                            <Input
+                              value={label || ""}
+                              onChange={(e) => handleTextChange(labelKey, e.target.value)}
+                              onBlur={handleBlur}
+                              placeholder={index === 1 ? "e.g., Tickets today" : "Label"}
+                              className="h-8 text-xs bg-background/60"
+                              maxLength={40}
+                            />
+                            <Input
+                              value={value || ""}
+                              onChange={(e) => handleTextChange(valueKey, e.target.value)}
+                              onBlur={handleBlur}
+                              placeholder={index === 1 ? "e.g., 23" : "Value"}
+                              className={cn(
+                                "h-8 text-xs bg-background/60 text-right",
+                                hasContent && "font-semibold"
+                              )}
+                              maxLength={24}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* FAQs */}
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-[0.18em]">
+                        FAQ (optional)
+                      </p>
+                      {[1, 2, 3].map((index) => {
+                        const qKey = `faq${index}Question` as keyof ClientUrlSettings;
+                        const aKey = `faq${index}Answer` as keyof ClientUrlSettings;
+                        const question = settings[qKey] as string | undefined;
+                        const answer = settings[aKey] as string | undefined;
+                        const hasContent = question || answer;
+
+                        return (
+                          <div
+                            key={index}
+                            className={cn(
+                              "rounded-lg border border-border/30 bg-background/60 px-3 py-2 space-y-1.5",
+                              hasContent && "bg-muted/30"
+                            )}
+                          >
+                            <Input
+                              value={question || ""}
+                              onChange={(e) => handleTextChange(qKey, e.target.value)}
+                              onBlur={handleBlur}
+                              placeholder={
+                                index === 1 ? "e.g., What can this assistant help me with?" : "Question"
+                              }
+                              className="h-8 text-xs bg-background/60"
+                              maxLength={120}
+                            />
+                            <textarea
+                              value={answer || ""}
+                              onChange={(e) => handleTextChange(aKey, e.target.value)}
+                              onBlur={handleBlur}
+                              placeholder={index === 1 ? "Short, friendly answer" : "Answer"}
+                              className={cn(
+                                "w-full px-2 py-1.5 rounded-md bg-background/60 border border-border/30 text-[11px] text-foreground resize-none transition-colors",
+                                "focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/40"
+                              )}
+                              rows={2}
+                              maxLength={260}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </SettingsSection>
 
