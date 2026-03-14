@@ -90,12 +90,15 @@ export const FileUpload = ({
           throw new Error(`Failed to get upload URL: ${response.status}`);
         }
 
-        const { uploadUrl, path: objectPath, bucketId } = await response.json();
+        const { uploadUrl, token, path: objectPath, bucketId } = await response.json();
 
-        // Upload file via presigned URL (MinIO/S3). Do not send Authorization or Content-Type;
-        // the URL is signed without them and would be rejected with 400.
+        // Upload file to Supabase Storage
         const uploadResponse = await fetch(uploadUrl, {
           method: 'PUT',
+          headers: {
+            'Content-Type': file.type,
+            'Authorization': `Bearer ${token}`,
+          },
           body: file,
         });
 
@@ -177,17 +180,11 @@ export const FileUpload = ({
   });
 
   return (
-    <div className="w-full max-w-[400px] mx-auto" {...getRootProps()}>
+    <div className="w-full" {...getRootProps()}>
       <motion.div
         onClick={handleClick}
         whileHover="animate"
-        className={cn(
-          "p-4 group/file block rounded-xl cursor-pointer w-full relative overflow-hidden transition-colors duration-200",
-          "border border-dashed border-border/60 hover:border-border",
-          "bg-muted/5",
-          "shadow-[inset_0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[inset_0_2px_10px_rgba(0,0,0,0.2)]",
-          isDragActive && "border-foreground/40 bg-muted/20 shadow-[inset_0_2px_15px_rgba(0,0,0,0.1)] dark:shadow-[inset_0_2px_15px_rgba(0,0,0,0.3)]"
-        )}
+        className="p-10 group/file block rounded-lg cursor-pointer w-full relative overflow-hidden"
       >
         <input
           ref={fileInputRef}
@@ -202,20 +199,20 @@ export const FileUpload = ({
           <GridPattern />
         </div>
         <div className="flex flex-col items-center justify-center">
-          <p className="relative z-20 font-sans font-bold text-neutral-700 dark:text-neutral-300 text-sm">
+          <p className="relative z-20 font-sans font-bold text-neutral-700 dark:text-neutral-300 text-base">
             {uploading ? "Uploading..." : "Upload file"}
           </p>
-          <p className="relative z-20 font-sans font-normal text-neutral-400 dark:text-neutral-400 text-xs mt-1 text-center">
-            {uploading ? "Please wait..." : "Drag files here or click"}
+          <p className="relative z-20 font-sans font-normal text-neutral-400 dark:text-neutral-400 text-base mt-2">
+            {uploading ? "Please wait while files are being uploaded" : "Drag or drop your files here or click to upload"}
           </p>
-          <div className="relative w-full mt-4 max-w-xl mx-auto">
+          <div className="relative w-full mt-10 max-w-xl mx-auto">
             {files.length > 0 &&
               files.map((file, idx) => (
                 <motion.div
                   key={"file" + idx}
                   layoutId={idx === 0 ? "file-upload" : "file-upload-" + idx}
                   className={cn(
-                    "relative overflow-hidden z-40 bg-white dark:bg-neutral-900 flex flex-col items-start justify-start md:h-16 p-3 mt-2 w-full mx-auto rounded-md",
+                    "relative overflow-hidden z-40 bg-white dark:bg-neutral-900 flex flex-col items-start justify-start md:h-24 p-4 mt-4 w-full mx-auto rounded-md",
                     "shadow-sm"
                   )}
                 >
@@ -224,7 +221,7 @@ export const FileUpload = ({
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       layout
-                      className="text-xs text-neutral-700 dark:text-neutral-300 truncate max-w-[200px]"
+                      className="text-base text-neutral-700 dark:text-neutral-300 truncate max-w-xs"
                     >
                       {file.name}
                     </motion.p>
@@ -232,9 +229,29 @@ export const FileUpload = ({
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       layout
-                      className="rounded-lg px-2 py-1 w-fit flex-shrink-0 text-[10px] text-neutral-600 dark:bg-neutral-800 dark:text-white shadow-input"
+                      className="rounded-lg px-2 py-1 w-fit flex-shrink-0 text-sm text-neutral-600 dark:bg-neutral-800 dark:text-white shadow-input"
                     >
                       {(file.size / (1024 * 1024)).toFixed(2)} MB
+                    </motion.p>
+                  </div>
+
+                  <div className="flex text-sm md:flex-row flex-col items-start md:items-center w-full mt-2 justify-between text-neutral-600 dark:text-neutral-400">
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      layout
+                      className="px-1 py-0.5 rounded-md bg-gray-100 dark:bg-neutral-800 "
+                    >
+                      {file.type}
+                    </motion.p>
+
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      layout
+                    >
+                      modified{" "}
+                      {new Date(file.lastModified).toLocaleDateString()}
                     </motion.p>
                   </div>
                 </motion.div>
@@ -249,18 +266,18 @@ export const FileUpload = ({
                   damping: 20,
                 }}
                 className={cn(
-                  "relative group-hover/file:shadow-2xl z-40 bg-white dark:bg-neutral-900 flex items-center justify-center h-16 w-16 mt-2 mx-auto rounded-md",
-                  "shadow-[0px_5px_20px_rgba(0,0,0,0.1)]"
+                  "relative group-hover/file:shadow-2xl z-40 bg-white dark:bg-neutral-900 flex items-center justify-center h-32 mt-4 w-full max-w-[8rem] mx-auto rounded-md",
+                  "shadow-[0px_10px_50px_rgba(0,0,0,0.1)]"
                 )}
               >
                 {isDragActive ? (
                   <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="text-neutral-600 flex flex-col items-center text-xs"
+                    className="text-neutral-600 flex flex-col items-center"
                   >
-                    Drop
-                    <IconUpload className="h-3 w-3 mt-1 text-neutral-600 dark:text-neutral-400" />
+                    Drop it
+                    <IconUpload className="h-4 w-4 text-neutral-600 dark:text-neutral-400" />
                   </motion.p>
                 ) : (
                   <IconUpload className="h-4 w-4 text-neutral-600 dark:text-neutral-300" />
@@ -271,7 +288,7 @@ export const FileUpload = ({
             {!files.length && (
               <motion.div
                 variants={secondaryVariant}
-                className="absolute opacity-0 border border-dashed border-sky-400 inset-0 z-30 bg-transparent flex items-center justify-center h-16 w-16 mt-2 mx-auto rounded-md"
+                className="absolute opacity-0 border border-dashed border-sky-400 inset-0 z-30 bg-transparent flex items-center justify-center h-32 mt-4 w-full max-w-[8rem] mx-auto rounded-md"
               ></motion.div>
             )}
           </div>

@@ -47,18 +47,13 @@ function NavCategoryLabel({ children }: { children: React.ReactNode }) {
 // Navigation link component for dashboard views
 function DashboardNavLink({ label, view, Icon }: { label: string; view: DashboardView; Icon: React.ComponentType<AnimatedIconProps> }) {
   const { navigateTo, isActive } = useDashboardNavigation();
-  const { open, animate, setOpen, isMobile } = useSidebar();
+  const { open, animate } = useSidebar();
   const active = isActive(view);
   const [isHovered, setIsHovered] = useState(false);
 
   return (
     <button
-      onClick={() => {
-        navigateTo(view);
-        if (isMobile) {
-          setOpen(false);
-        }
-      }}
+      onClick={() => navigateTo(view)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={cn(

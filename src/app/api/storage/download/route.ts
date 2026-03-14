@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
-import { minioClient, ensureTeamBucket } from "@/lib/storage/minio";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -17,31 +17,86 @@ export async function GET(req: NextRequest) {
   const cookieStore = await cookies();
   const teamId = cookieStore.get("team_id")?.value || "";
 
-  if (!teamId) {
-    return new Response("No team context", { status: 400 });
-  }
-
   const { data: teamFolder } = await supabaseServer
     .from("team_folders")
-    .select("team_id, folder_id, storage_bucket")
+    .select("team_id, provider, folder_id, public_folder_id, private_folder_id, storage_bucket")
     .eq("team_id", teamId)
+    .eq("provider", "supabase_storage")
     .single();
 
   if (!teamFolder) {
     return new Response("Not found", { status: 404 });
   }
 
-  // Ensure bucket exists dynamically
-  const bucket = await ensureTeamBucket(teamId);
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string;
+  const bucket = teamFolder.storage_bucket || process.env.SUPABASE_STORAGE_BUCKET || "team-files";
+  const admin = createClient(supabaseUrl, serviceKey);
 
-  // Object key = path (relative to bucket root)
-  let fullPath = path || "";
-  if (!fullPath) {
-    return new Response("path is required", { status: 400 });
+  // Use team root folder directly (no longer using Public/Private subfolders)
+  const baseFolderPath = teamFolder.folder_id || `teams/${teamId}`;
+
+  // Try to download the file
+  let fullPath = `${baseFolderPath}/${path}`;
+  let { data, error } = await admin.storage.from(bucket).download(fullPath);
+  
+  // If download fails and path looks like just a filename, search for it
+  if (error && !path.includes("/")) {
+    const fileName = path;
+    
+    // Search for file by listing all items with the filename
+    // Try direct search first, then recursive search if needed
+    const searchFileByName = async (folder: string, targetName: string): Promise<string | null> => {
+      try {
+        const { data: items, error: listError } = await admin.storage.from(bucket).list(folder, {
+          limit: 1000,
+          offset: 0,
+        });
+        
+        if (listError || !items) return null;
+        
+        // First, check direct matches
+        for (const item of items) {
+          if (item.name === targetName) {
+            const itemPath = folder ? `${folder}/${item.name}` : item.name;
+            // Verify it's actually a file by trying to download
+            const test = await admin.storage.from(bucket).download(itemPath);
+            if (!test.error && test.data) {
+              return itemPath;
+            }
+          }
+        }
+        
+        // Then search in subdirectories (items without extensions or with /)
+        for (const item of items) {
+          // Skip if it has an extension (likely a file, not a folder)
+          if (item.name.includes(".") && !item.name.endsWith("/")) {
+            continue;
+          }
+          
+          const itemPath = folder ? `${folder}/${item.name}` : item.name;
+          const found = await searchFileByName(itemPath, targetName);
+          if (found) return found;
+        }
+      } catch (err) {
+        console.error("Error searching for file:", err);
+      }
+      
+      return null;
+    };
+    
+    const foundPath = await searchFileByName(baseFolderPath, fileName);
+    if (foundPath) {
+      fullPath = foundPath;
+      const result = await admin.storage.from(bucket).download(fullPath);
+      data = result.data;
+      error = result.error;
+    }
   }
-  const baseFolderPath = ""; // listing fallback uses bucket root
-  let dataStream: any = null;
-  let fileError: any = null;
+  
+  if (error || !data) {
+    return new Response(error?.message || "Download failed", { status: 500 });
+  }
 
   // Determine content type based on file extension
   const fileName = path.split("/").pop() || "file";
@@ -63,52 +118,7 @@ export async function GET(req: NextRequest) {
     contentType = "text/html";
   }
 
-  try {
-    // First try to download directly
-    dataStream = await minioClient.getObject(bucket, fullPath);
-  } catch (error) {
-    // If direct download fails and path looks like just a filename, search for it
-    if (!path.includes("/")) {
-      try {
-        const objectsStream = minioClient.listObjectsV2(bucket, baseFolderPath, true);
-        const foundPath = await new Promise<string | null>((resolve, reject) => {
-          objectsStream.on('data', (obj) => {
-            if (obj.name && obj.name.endsWith(`/${path}`)) {
-              resolve(obj.name);
-            }
-          });
-          objectsStream.on('error', reject);
-          objectsStream.on('end', () => resolve(null));
-        });
-
-        if (foundPath) {
-          fullPath = foundPath;
-          dataStream = await minioClient.getObject(bucket, fullPath);
-        } else {
-          fileError = new Error("File not found in MinIO");
-        }
-      } catch (searchError) {
-        fileError = searchError;
-      }
-    } else {
-      fileError = error;
-    }
-  }
-
-  if (fileError || !dataStream) {
-    return new Response(fileError?.message || "Download failed", { status: 404 });
-  }
-
-  // Convert MinIO stream to Web ReadableStream
-  const readableStream = new ReadableStream({
-    start(controller) {
-      dataStream.on('data', (chunk: any) => controller.enqueue(chunk));
-      dataStream.on('end', () => controller.close());
-      dataStream.on('error', (err: any) => controller.error(err));
-    }
-  });
-
-  return new Response(readableStream, {
+  return new Response(data, {
     status: 200,
     headers: {
       "Content-Type": contentType,

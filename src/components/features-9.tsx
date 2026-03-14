@@ -9,9 +9,9 @@ import { FadeText } from './ui/fade-text'
 export default function FeaturesSection() {
     return (
       <section className="px-4 py-16 md:py-32">
-        <div className="mx-auto grid max-w-6xl border dark:border-white/10 border-black/10 md:grid-cols-2 rounded-3xl overflow-hidden bg-background/60 backdrop-blur-sm">
+        <div className="mx-auto grid max-w-6xl border dark:border-white/10 border-black/10 md:grid-cols-2">
           <div>
-            <div className="p-6 sm:p-10 md:p-12">
+            <div className="p-6 sm:p-12">
               <span className="text-muted-foreground flex items-center gap-2">
                 <MapIcon className="size-4" />
                 Real time location tracking
@@ -31,20 +31,20 @@ export default function FeaturesSection() {
                 <div className="rounded-(--radius) bg-background absolute inset-2 -bottom-2 mx-auto border border-black/10 dark:border-white/10 px-3 py-4 text-xs font-medium shadow-md shadow-zinc-950/5 dark:bg-zinc-900"></div>
               </div>
 
-              <div className="relative overflow-hidden w-full max-w-full aspect-[4/3] md:aspect-[16/9]">
+              <div className="relative overflow-hidden">
                 <div className="bg-radial z-1 to-background absolute inset-0 from-transparent to-75%"></div>
                 <Map />
               </div>
             </div>
           </div>
-          <div className="overflow-hidden border-t bg-zinc-50 p-6 sm:p-10 md:p-12 md:border-0 md:border-l border-black/10 dark:border-white/10 dark:bg-transparent">
+          <div className="overflow-hidden border-t bg-zinc-50 p-6 sm:p-12 md:border-0 md:border-l border-black/10 dark:border-white/10 dark:bg-transparent">
             <div className="relative z-10">
               <span className="text-muted-foreground flex items-center gap-2">
                 <MessageCircle className="size-4" />
                 Email and web support
               </span>
 
-              <p className="my-8 text-2xl md:text-3xl font-semibold">
+              <p className="my-8 text-2xl font-semibold">
                 Reach out via email or web for any assistance you need.
               </p>
             </div>
@@ -80,7 +80,7 @@ export default function FeaturesSection() {
               </div>
             </div>
           </div>
-          <div className="col-span-full border-y border-black/10 dark:border-white/10 px-6 py-10 sm:px-10 sm:py-12">
+          <div className="col-span-full border-y border-black/10 dark:border-white/10 p-12">
             {/* <p className="text-center text-4xl font-semibold lg:text-7xl">
               99.99% Uptime
             </p> */}
@@ -92,13 +92,13 @@ export default function FeaturesSection() {
             />
           </div>
           <div className="relative col-span-full">
-            <div className="z-10 max-w-lg px-6 pr-8 pt-6 md:absolute md:px-12 md:pt-12">
+            <div className="absolute z-10 max-w-lg px-6 pr-12 pt-6 md:px-12 md:pt-12">
               <span className="text-muted-foreground flex items-center gap-2">
                 <Activity className="size-4" />
                 Activity feed
               </span>
 
-              <p className="my-8 text-2xl md:text-3xl font-semibold">
+              <p className="my-8 text-2xl font-semibold">
                 Monitor your agent's activity in real-time.{" "}
                 <span className="text-muted-foreground">
                   {" "}
@@ -165,7 +165,7 @@ const chartData = [
 const MonitoringChart = () => {
     return (
         <ChartContainer
-            className="h-72 w-full aspect-auto sm:h-80 md:h-96"
+            className="h-120 aspect-auto md:h-96"
             config={chartConfig}>
             <AreaChart
                 accessibilityLayer
