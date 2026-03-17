@@ -15,32 +15,190 @@ import { BentoGrid, BentoGridItem } from "@/components/ui/bento-grid";
 import { HoverBorderGradient } from "@/components/ui/hover-border-gradient";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
+// --- ANIMATED ICONS ---
+function AnimatedBrainIcon({ className, isHovered }: { className?: string, isHovered?: boolean }) {
+  return (
+    <motion.svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      animate={isHovered ? { scale: [1, 1.12, 1], rotate: [0, 3, -2, 0] } : { scale: 1, rotate: 0 }}
+      transition={{ duration: 0.5, ease: "easeInOut" }}
+    >
+      <path d="M12 18V5" />
+      <path d="M15 13a4.17 4.17 0 0 1-3-4 4.17 4.17 0 0 1-3 4" />
+      <path d="M17.598 6.5A3 3 0 1 0 12 5a3 3 0 1 0-5.598 1.5" />
+      <path d="M17.997 5.125a4 4 0 0 1 2.526 5.77" />
+      <path d="M18 18a4 4 0 0 0 2-7.464" />
+      <path d="M19.967 17.483A4 4 0 1 1 12 18a4 4 0 1 1-7.967-.517" />
+      <path d="M6 18a4 4 0 0 1-2-7.464" />
+      <path d="M6.003 5.125a4 4 0 0 0-2.526 5.77" />
+    </motion.svg>
+  );
+}
+
+function AnimatedSparklesIcon({ className, isHovered }: { className?: string, isHovered?: boolean }) {
+  return (
+    <motion.svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      animate={isHovered ? { rotate: [0, 15, -15, 0], scale: [1, 1.2, 1] } : { rotate: 0, scale: 1 }}
+      transition={{ duration: 0.6, ease: "easeInOut" }}
+    >
+      <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" />
+      <path d="M5 3v4" />
+      <path d="M19 17v4" />
+      <path d="M3 5h4" />
+      <path d="M17 19h4" />
+    </motion.svg>
+  );
+}
+
+function AnimatedTrendingIcon({ className, isHovered }: { className?: string, isHovered?: boolean }) {
+  return (
+    <motion.svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      animate={isHovered ? { y: [0, -3, 0] } : { y: 0 }}
+      transition={{ duration: 0.4, ease: "easeInOut" }}
+    >
+      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+      <polyline points="16 7 22 7 22 13" />
+    </motion.svg>
+  );
+}
+
+function AnimatedCpuIcon({ className, isHovered }: { className?: string, isHovered?: boolean }) {
+  return (
+    <motion.svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      animate={isHovered ? { scale: [1, 1.1, 1] } : { scale: 1 }}
+      transition={{ duration: 0.4, ease: "easeInOut" }}
+    >
+      <rect width="16" height="16" x="4" y="4" rx="2" />
+      <rect width="6" height="6" x="9" y="9" rx="1" />
+      <path d="M15 2v2" />
+      <path d="M15 20v2" />
+      <path d="M2 15h2" />
+      <path d="M2 9h2" />
+      <path d="M20 15h2" />
+      <path d="M20 9h2" />
+      <path d="M9 2v2" />
+      <path d="M9 20v2" />
+    </motion.svg>
+  );
+}
+
 const EXTENSIONS = [
 	{
+        id: "rag",
 		title: "RAG Automation",
 		description: "Retrieval-Augmented Generation to ground AI with your private data seamlessly.",
-		icon: <BrainCircuit className="w-8 h-8 text-primary" />,
+		icon: AnimatedBrainIcon,
+        iconColor: "text-primary",
         span: { mobile: 1, tablet: 2, desktop: 2 },
 	},
 	{
+        id: "knowledge_gap",
 		title: "Knowledge Gap Filler",
 		description: "Automatically identify missing documentation and request intel from your team.",
-		icon: <Sparkles className="w-8 h-8 text-amber-500" />,
+		icon: AnimatedSparklesIcon,
+        iconColor: "text-amber-500",
         span: { mobile: 1, tablet: 1, desktop: 1 },
 	},
 	{
+        id: "ai_recommendations",
 		title: "AI Recommendations",
 		description: "Proactive, context-aware suggestions directly injected into your workflows.",
-		icon: <TrendingUp className="w-8 h-8 text-green-500" />,
+		icon: AnimatedTrendingIcon,
+        iconColor: "text-green-500",
         span: { mobile: 1, tablet: 1, desktop: 1 },
 	},
     {
+        id: "smart_routing",
 		title: "Smart Agent Routing",
 		description: "Deploy specific tasks to specialized AI agents dynamically based on context.",
-		icon: <Cpu className="w-8 h-8 text-blue-500" />,
+		icon: AnimatedCpuIcon,
+        iconColor: "text-blue-500",
         span: { mobile: 1, tablet: 2, desktop: 2 },
 	},
 ];
+
+function ExtensionCard({ ext }: { ext: typeof EXTENSIONS[0] }) {
+    const [isHovered, setIsHovered] = useState(false);
+    const [isActive, setIsActive] = useState(false);
+
+    return (
+        <BentoGridItem 
+            span={ext.span}
+            className={`transition-all duration-500 relative overflow-hidden group ${isActive ? 'bg-primary/5 border-primary/30' : 'bg-card/30 border-border/20 hover:bg-card/50 hover:border-border/40'}`}
+        >
+            <div 
+                className="flex flex-col h-full justify-between gap-6"
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+            >
+                {/* Active Indicator Background Glow */}
+                {isActive && (
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+                )}
+
+                <div className="flex items-start justify-between">
+                    <div className="p-2 w-16 h-16 rounded-2xl bg-background/50 flex items-center justify-center border border-border/30 shadow-inner">
+                        <ext.icon className={`w-8 h-8 ${ext.iconColor}`} isHovered={isHovered} />
+                    </div>
+                    
+                    {isActive && (
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/20">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                            Active
+                        </div>
+                    )}
+                </div>
+
+                <div className="relative z-10">
+                    <h4 className="text-xl font-bold mb-2">{ext.title}</h4>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{ext.description}</p>
+                </div>
+                
+                <div className="pt-4 mt-auto relative z-10">
+                    <Button 
+                        variant={isActive ? "secondary" : "ghost"} 
+                        className={`w-full justify-between group ${isActive ? 'bg-background hover:bg-destructive/10 hover:text-destructive border border-border/50' : 'hover:bg-primary/10 hover:text-primary'}`}
+                        onClick={() => setIsActive(!isActive)}
+                    >
+                        {isActive ? 'Disable Add-on' : 'Enable Add-on'}
+                        <ChevronRight className={`w-4 h-4 opacity-50 group-hover:opacity-100 transition-all ${isActive ? 'group-hover:translate-x-0 hidden' : 'group-hover:translate-x-1'}`} />
+                    </Button>
+                </div>
+            </div>
+        </BentoGridItem>
+    );
+}
 
 export default function BillingPage() {
 	const supabase = createSupabaseBrowserClient();
@@ -233,7 +391,7 @@ export default function BillingPage() {
                         >
                             <div className="flex flex-col h-full justify-between gap-6">
                                 <div className="p-2 w-16 h-16 rounded-2xl bg-background/50 flex items-center justify-center border border-border/30 shadow-inner">
-                                    {ext.icon}
+                                    <ext.icon className={`w-8 h-8 ${ext.iconColor}`} isHovered={false} />
                                 </div>
                                 <div>
                                     <h4 className="text-xl font-bold mb-2">{ext.title}</h4>

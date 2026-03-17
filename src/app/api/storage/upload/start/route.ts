@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
+import { minioClient, ensureTeamBucket } from "@/lib/storage/minio";
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,64 +23,66 @@ export async function POST(req: NextRequest) {
     const cookieStore = await cookies();
     const teamId = cookieStore.get("team_id")?.value || "";
     console.log("Team ID from cookie:", teamId);
+    if (!teamId) {
+      return NextResponse.json({ error: "No team context" }, { status: 400 });
+    }
 
     const { data: teamFolder, error: teamFolderError } = await supabaseServer
       .from("team_folders")
-      .select("team_id, provider, folder_id, public_folder_id, private_folder_id, storage_bucket")
+      .select("team_id, folder_id, storage_bucket")
       .eq("team_id", teamId)
-      .eq("provider", "supabase_storage")
       .single();
 
-    console.log("Team folder query result:", { teamFolder, teamFolderError });
+    if (teamFolderError && teamFolderError.code !== "PGRST116") {
+      console.error("Error fetching team folders:", teamFolderError);
+      return NextResponse.json({ error: "Database error" }, { status: 500 });
+    }
 
     if (!teamFolder) {
       console.log("No team folder found for team:", teamId);
       return NextResponse.json({ 
         error: "Team folder not found. Please create a team folder first.",
         teamId,
-        details: "No Supabase Storage folder exists for this team"
+        details: "No folder exists for this team"
       }, { status: 404 });
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string;
-    const bucket = teamFolder.storage_bucket || process.env.SUPABASE_STORAGE_BUCKET || "team-files";
-    const admin = createClient(supabaseUrl, serviceKey);
+    // Ensure bucket exists dynamically
+    const bucket = await ensureTeamBucket(teamId);
 
-    // Use team root folder directly (no longer using Public/Private subfolders)
-    const baseFolderPath = teamFolder.folder_id || `teams/${teamId}`;
-    
-    const filePath = path ? `${baseFolderPath}/${path}/${fileName}` : `${baseFolderPath}/${fileName}`;
+    // Files live directly in bucket root: object key = path/fileName or fileName
+    const filePath = path ? `${path}/${fileName}`.replace(/^\/+/, "") : fileName;
     
     console.log('Upload path construction:', {
-      scope, // Scope is preserved for metadata, but not used for path construction
-      baseFolderPath,
+      bucket,
+      scope,
       path,
       fileName,
       finalPath: filePath
     });
 
-    // Generate signed upload URL
-    const { data, error } = await admin.storage
-      .from(bucket)
-      .createSignedUploadUrl(filePath, {
-        upsert: true, // Allow overwriting existing files
+    try {
+      // Generate pre-signed URL for PUT operation (expiry 15 minutes = 900 seconds)
+      const presignedUrl = await minioClient.presignedPutObject(bucket, filePath, 900);
+      
+      return NextResponse.json({
+        uploadUrl: presignedUrl,
+        path: filePath,
+        bucketId: bucket,
+        token: "minio-direct", // Token not needed for MinIO presigned URLs
       });
-
-    if (error) {
-      console.error("Error creating signed upload URL:", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      console.error("Error generating MinIO presigned URL:", err);
+      return NextResponse.json({
+        error: "Failed to generate upload URL",
+        details: message,
+      }, { status: 500 });
     }
-
-    return NextResponse.json({
-      uploadUrl: data.signedUrl,
-      path: filePath,
-      bucketId: bucket,
-      token: data.token,
-    });
 
   } catch (error) {
     console.error("Upload API error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+

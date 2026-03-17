@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { qdrantClient, qdrantCollection, ensureQdrantCollection } from "@/lib/qdrant/client";
+import { v4 as uuidv4 } from "uuid";
 
 type IncomingDoc = {
 	teamId: string;
@@ -29,6 +31,7 @@ export async function POST(req: NextRequest) {
 
 			const context = ((d.context ?? 'private') === 'public') ? 'public' : 'private';
 			return {
+                id: uuidv4(), // Generate ID for both Qdrant and potential future use
 				team_id: teamId,
 				folder_id: d.folderId ?? null,
 				file_name: fileName,
@@ -38,6 +41,48 @@ export async function POST(req: NextRequest) {
 				metadata: d.metadata ?? {},
 			};
 		});
+
+        const useQdrant = process.env.USE_QDRANT === 'true';
+
+        if (useQdrant) {
+            await ensureQdrantCollection();
+            
+            // Filter out items without embeddings as Qdrant requires them for the vector space
+            const validPoints = rows
+                .filter(row => row.embedding && row.embedding.length > 0)
+                .map(row => ({
+                    id: row.id,
+                    vector: row.embedding!,
+                    payload: {
+                        team_id: row.team_id,
+                        folder_id: row.folder_id,
+                        file_name: row.file_name,
+                        content: row.content,
+                        context: row.context,
+                        metadata: row.metadata
+                    }
+                }));
+
+            if (validPoints.length > 0) {
+                await qdrantClient.upsert(qdrantCollection, {
+                    wait: true,
+                    points: validPoints
+                });
+            }
+
+            // Return same format as before
+            const responseItems = rows.map(r => ({
+                id: r.id,
+                team_id: r.team_id,
+                file_name: r.file_name,
+                context: r.context
+            }));
+
+            return NextResponse.json({ 
+                inserted: validPoints.length, 
+                items: responseItems 
+            }, { status: 200 });
+        }
 
 		const supabase = await createSupabaseServerClient();
 		const { data, error } = await supabase

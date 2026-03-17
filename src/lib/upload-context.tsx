@@ -1,16 +1,13 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
-import { useDropzone } from 'react-dropzone';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Upload, 
   X, 
   CheckCircle2, 
   AlertCircle, 
   FileText,
   Loader2,
-  FolderOpen
 } from 'lucide-react';
 import { normalizeFileName, cn } from '@/lib/utils';
 
@@ -86,19 +83,17 @@ async function uploadFileToStorage(
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Failed to get upload URL' }));
-      throw new Error(error.error || `HTTP ${response.status}`);
+      const body = await response.json().catch(() => ({ error: 'Failed to get upload URL' }));
+      const message = body.details ? `${body.error}: ${body.details}` : (body.error || `HTTP ${response.status}`);
+      throw new Error(message);
     }
 
-    const { uploadUrl, token, path: objectPath, bucketId } = await response.json();
+    const { uploadUrl, path: objectPath, bucketId } = await response.json();
 
-    // 2. Upload file to storage
+    // 2. Upload file to storage (presigned URL: do not send Authorization or Content-Type;
+    // the URL is signed without them and MinIO/S3 would reject the request with 400)
     const uploadResponse = await fetch(uploadUrl, {
       method: 'PUT',
-      headers: {
-        'Content-Type': file.type,
-        'Authorization': `Bearer ${token}`,
-      },
       body: file,
     });
 
@@ -268,18 +263,6 @@ export function UploadProvider({ children }: { children: React.ReactNode }) {
     }
   }, [uploads, updateUpload, removeUpload]);
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    acceptedFiles.forEach(file => {
-      uploadFile(file);
-    });
-  }, [uploadFile]);
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    noClick: true,
-    noKeyboard: true,
-  });
-
   const activeUploads = uploads.filter(u => u.status !== 'pending');
 
   return (
@@ -305,110 +288,7 @@ export function UploadProvider({ children }: { children: React.ReactNode }) {
         uploadPendingFiles,
       }}
     >
-      <div {...getRootProps()} className="h-full w-full relative">
-        <input {...getInputProps()} className="hidden" />
-        
-        {/* Modern Centered Drag Overlay */}
-        <AnimatePresence>
-          {isDragActive && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-[100] pointer-events-none"
-            >
-              {/* Backdrop */}
-              <div className="absolute inset-0 bg-background/90 backdrop-blur-md" />
-              
-              {/* Animated border effect */}
-              <div className="absolute inset-4 md:inset-8 lg:inset-16 rounded-3xl overflow-hidden">
-                <motion.div
-                  className="absolute inset-0 rounded-3xl"
-                  style={{
-                    background: 'linear-gradient(90deg, hsl(var(--primary)) 0%, hsl(var(--primary)/0.5) 50%, hsl(var(--primary)) 100%)',
-                    backgroundSize: '200% 100%',
-                  }}
-                  animate={{
-                    backgroundPosition: ['0% 50%', '200% 50%'],
-                  }}
-                  transition={{
-                    duration: 1.5,
-                    repeat: Infinity,
-                    ease: 'linear',
-                  }}
-                />
-                <div className="absolute inset-[2px] bg-background rounded-3xl" />
-              </div>
-
-              {/* Content */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <motion.div
-                  initial={{ scale: 0.9, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  exit={{ scale: 0.9, opacity: 0 }}
-                  transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                  className="flex flex-col items-center gap-6 text-center px-4"
-                >
-                  {/* Upload Icon */}
-                  <motion.div
-                    animate={{ y: [0, -8, 0] }}
-                    transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-                    className="relative"
-                  >
-                    <div className="w-24 h-24 rounded-3xl bg-primary/10 flex items-center justify-center">
-                      <Upload className="w-10 h-10 text-primary" />
-                    </div>
-                    {/* Pulse rings */}
-                    <motion.div
-                      className="absolute inset-0 rounded-3xl border-2 border-primary/30"
-                      animate={{ scale: [1, 1.2], opacity: [0.5, 0] }}
-                      transition={{ duration: 1, repeat: Infinity }}
-                    />
-                    <motion.div
-                      className="absolute inset-0 rounded-3xl border-2 border-primary/20"
-                      animate={{ scale: [1, 1.4], opacity: [0.3, 0] }}
-                      transition={{ duration: 1, repeat: Infinity, delay: 0.3 }}
-                    />
-                  </motion.div>
-
-                  {/* Text */}
-                  <div className="space-y-2">
-                    <h3 className="text-2xl font-semibold text-foreground">
-                      Drop files to upload
-                    </h3>
-                    {currentPath ? (
-                      <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                        <FolderOpen className="w-4 h-4" />
-                        <span className="text-sm">
-                          Upload to <span className="text-primary font-medium">/{currentPath}</span>
-                        </span>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">
-                        Files will be uploaded to your storage
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Supported formats hint */}
-                  <div className="flex flex-wrap gap-2 justify-center max-w-md">
-                    {['PDF', 'DOC', 'TXT', 'Images', 'More'].map((format) => (
-                      <span
-                        key={format}
-                        className="px-2.5 py-1 text-xs font-medium bg-muted/50 text-muted-foreground rounded-full"
-                      >
-                        {format}
-                      </span>
-                    ))}
-                  </div>
-                </motion.div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        
-        {children}
+      {children}
 
         {/* Modern Upload Status Toasts */}
         <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3 max-w-sm w-full pointer-events-none">
@@ -506,7 +386,6 @@ export function UploadProvider({ children }: { children: React.ReactNode }) {
             ))}
           </AnimatePresence>
         </div>
-      </div>
     </UploadContext.Provider>
   );
 }
