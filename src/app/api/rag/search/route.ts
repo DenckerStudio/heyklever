@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { qdrantClient, qdrantCollection } from "@/lib/qdrant/client";
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,9 +14,54 @@ export async function POST(req: NextRequest) {
     const context = ((payload.context ?? 'private') as 'public' | 'private');
     const folderId = payload.folderId ?? payload.folder_id ?? null;
     const limit = Number(payload.limit ?? 5);
+    const embedding = payload.embedding as number[] | undefined;
 
     if (!query || !teamId) {
       return NextResponse.json({ error: "query and teamId are required" }, { status: 400 });
+    }
+
+    const useQdrant = process.env.USE_QDRANT === 'true';
+
+    // QDRANT SEARCH LOGIC
+    if (useQdrant && embedding && embedding.length > 0) {
+      try {
+        const mustFilters: any[] = [
+          { key: "team_id", match: { value: teamId } },
+          { key: "context", match: { value: context } }
+        ];
+
+        if (folderId) {
+          mustFilters.push({ key: "folder_id", match: { value: folderId } });
+        }
+
+        const searchResult = await qdrantClient.search(qdrantCollection, {
+          vector: embedding,
+          limit: isNaN(limit) ? 5 : limit,
+          filter: {
+            must: mustFilters
+          },
+          with_payload: true,
+        });
+
+        const formattedResults = searchResult.map(hit => {
+          const payload = hit.payload || {};
+          const content = String(payload.content || '');
+          
+          return {
+            file_name: String(payload.file_name || ''),
+            content_snippet: content.substring(0, 1200),
+            score: hit.score,
+            metadata: payload.metadata || {}
+          };
+        });
+
+        if (formattedResults.length > 0) {
+          return NextResponse.json({ results: formattedResults });
+        }
+      } catch (qdrantError) {
+        console.error("Qdrant search error:", qdrantError);
+        // Fall through to fallback logic
+      }
     }
 
     const supabase = await createSupabaseServerClient();

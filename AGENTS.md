@@ -27,6 +27,20 @@ NEXT_PUBLIC_SITE_URL
 STRIPE_SECRET_KEY
 STRIPE_WEBHOOK_SECRET
 SUPABASE_STORAGE_BUCKET
+
+# Optional overrides for MinIO and Qdrant
+USE_MINIO=true
+MINIO_ENDPOINT=localhost
+MINIO_PORT=9000
+MINIO_USE_SSL=false
+MINIO_ACCESS_KEY=your_minio_access_key
+MINIO_SECRET_KEY=your_minio_secret_key
+MINIO_BUCKET=team-files
+
+USE_QDRANT=true
+QDRANT_URL=http://localhost:6333
+QDRANT_API_KEY=your_qdrant_api_key
+QDRANT_COLLECTION_NAME=documents
 ```
 
 Placeholder values allow the app to build and serve the public landing page, sign-in, and sign-up pages. Authenticated features (dashboard, billing, AI chat) require real Supabase and Stripe credentials.

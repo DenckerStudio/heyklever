@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
+import { minioClient, ensureTeamBucket } from "@/lib/storage/minio";
 
 export async function DELETE(req: NextRequest) {
   try {
@@ -19,81 +19,63 @@ export async function DELETE(req: NextRequest) {
     const cookieStore = await cookies();
     const teamId = cookieStore.get("team_id")?.value || "";
 
+    if (!teamId) {
+      return NextResponse.json({ error: "No team context" }, { status: 400 });
+    }
+
     const { data: teamFolder } = await supabaseServer
       .from("team_folders")
-      .select("team_id, provider, folder_id, public_folder_id, private_folder_id, storage_bucket")
+      .select("team_id, folder_id")
       .eq("team_id", teamId)
-      .eq("provider", "supabase_storage")
       .single();
 
     if (!teamFolder) {
       return NextResponse.json({ error: "Team folder not found" }, { status: 404 });
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string;
-    const bucket = teamFolder.storage_bucket || process.env.SUPABASE_STORAGE_BUCKET || "team-files";
-    const admin = createClient(supabaseUrl, serviceKey);
+    const bucket = await ensureTeamBucket(teamId);
 
-    // Determine the folder path based on scope
-    let baseFolderPath = scope === "public" ? teamFolder.public_folder_id : teamFolder.private_folder_id;
+    // Object key = path (relative to bucket root)
+    const fullPath = path;
     
-    // If scope-specific folder ID is null, construct the correct path
-    if (!baseFolderPath) {
-      const teamBasePath = teamFolder.folder_id || `teams/${teamId}`;
-      baseFolderPath = `${teamBasePath}/${scope === "public" ? "Public" : "Private"}`;
+    if (!fullPath) {
+      return NextResponse.json({ error: "path is required" }, { status: 400 });
     }
-    
-    // Ensure we're using the correct scope path
-    if (!baseFolderPath.includes(scope === "public" ? "Public" : "Private")) {
-      const teamBasePath = teamFolder.folder_id || `teams/${teamId}`;
-      baseFolderPath = `${teamBasePath}/${scope === "public" ? "Public" : "Private"}`;
-    }
-    
-    const fullPath = path ? `${baseFolderPath}/${path}` : baseFolderPath;
     
     console.log('Delete path construction:', {
+      bucket,
       scope,
-      baseFolderPath,
       path,
       fullPath,
       isFolder
     });
 
-    // Delete from Supabase Storage
+    // Delete from MinIO
     if (isFolder) {
       // For folders, we need to list all files in the folder first and delete them
-      const { data: files, error: listError } = await admin.storage
-        .from(bucket)
-        .list(fullPath, { limit: 1000, offset: 0 });
+      // Ensure folder path ends with /
+      const prefix = fullPath.endsWith('/') ? fullPath : `${fullPath}/`;
       
-      if (listError) {
-        console.error("Error listing folder contents:", listError);
-        return NextResponse.json({ error: listError.message }, { status: 500 });
-      }
+      const stream = minioClient.listObjectsV2(bucket, prefix, true);
+      const objectsList: string[] = [];
+      
+      await new Promise<void>((resolve, reject) => {
+        stream.on('data', function(obj) {
+          if (obj.name) objectsList.push(obj.name);
+        });
+        stream.on('error', function(err) {
+          console.error("Error listing folder contents in MinIO:", err);
+          reject(err);
+        });
+        stream.on('end', resolve);
+      });
 
-      // Delete all files in the folder
-      if (files && files.length > 0) {
-        const filePaths = files.map(file => `${fullPath}/${file.name}`);
-        const { error: deleteError } = await admin.storage
-          .from(bucket)
-          .remove(filePaths);
-        
-        if (deleteError) {
-          console.error("Error deleting folder contents:", deleteError);
-          return NextResponse.json({ error: deleteError.message }, { status: 500 });
-        }
+      if (objectsList.length > 0) {
+        await minioClient.removeObjects(bucket, objectsList);
       }
     } else {
       // For files, delete directly
-      const { error: deleteError } = await admin.storage
-        .from(bucket)
-        .remove([fullPath]);
-      
-      if (deleteError) {
-        console.error("Error deleting file:", deleteError);
-        return NextResponse.json({ error: deleteError.message }, { status: 500 });
-      }
+      await minioClient.removeObject(bucket, fullPath);
     }
 
     // Delete from documents table (filter by metadata.context)
@@ -120,3 +102,4 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+

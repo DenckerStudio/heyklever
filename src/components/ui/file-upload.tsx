@@ -90,15 +90,12 @@ export const FileUpload = ({
           throw new Error(`Failed to get upload URL: ${response.status}`);
         }
 
-        const { uploadUrl, token, path: objectPath, bucketId } = await response.json();
+        const { uploadUrl, path: objectPath, bucketId } = await response.json();
 
-        // Upload file to Supabase Storage
+        // Upload file via presigned URL (MinIO/S3). Do not send Authorization or Content-Type;
+        // the URL is signed without them and would be rejected with 400.
         const uploadResponse = await fetch(uploadUrl, {
           method: 'PUT',
-          headers: {
-            'Content-Type': file.type,
-            'Authorization': `Bearer ${token}`,
-          },
           body: file,
         });
 
@@ -184,7 +181,13 @@ export const FileUpload = ({
       <motion.div
         onClick={handleClick}
         whileHover="animate"
-        className="p-10 group/file block rounded-lg cursor-pointer w-full relative overflow-hidden"
+        className={cn(
+          "p-6 group/file block rounded-xl cursor-pointer w-full relative overflow-hidden transition-colors duration-200",
+          "border-2 border-dashed border-border/60",
+          "bg-muted/5",
+          "shadow-[inset_0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-[inset_0_2px_10px_rgba(0,0,0,0.2)]",
+          isDragActive && "border-primary/60 bg-primary/10 shadow-[inset_0_2px_15px_rgba(0,0,0,0.1)] dark:shadow-[inset_0_2px_15px_rgba(0,0,0,0.3)]"
+        )}
       >
         <input
           ref={fileInputRef}

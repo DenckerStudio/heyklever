@@ -144,29 +144,6 @@ const EXTENSIONS = [
 		description: "Deploy specific tasks to specialized AI agents dynamically based on context.",
 		icon: AnimatedCpuIcon,
         iconColor: "text-blue-500",
-const EXTENSIONS = [
-	{
-		title: "RAG Automation",
-		description: "Retrieval-Augmented Generation to ground AI with your private data seamlessly.",
-		icon: <BrainCircuit className="w-8 h-8 text-primary" />,
-        span: { mobile: 1, tablet: 2, desktop: 2 },
-	},
-	{
-		title: "Knowledge Gap Filler",
-		description: "Automatically identify missing documentation and request intel from your team.",
-		icon: <Sparkles className="w-8 h-8 text-amber-500" />,
-        span: { mobile: 1, tablet: 1, desktop: 1 },
-	},
-	{
-		title: "AI Recommendations",
-		description: "Proactive, context-aware suggestions directly injected into your workflows.",
-		icon: <TrendingUp className="w-8 h-8 text-green-500" />,
-        span: { mobile: 1, tablet: 1, desktop: 1 },
-	},
-    {
-		title: "Smart Agent Routing",
-		description: "Deploy specific tasks to specialized AI agents dynamically based on context.",
-		icon: <Cpu className="w-8 h-8 text-blue-500" />,
         span: { mobile: 1, tablet: 2, desktop: 2 },
 	},
 ];
@@ -174,8 +151,6 @@ const EXTENSIONS = [
 function ExtensionCard({ ext }: { ext: typeof EXTENSIONS[0] }) {
     const [isHovered, setIsHovered] = useState(false);
     const [isActive, setIsActive] = useState(false);
-
-    const IconComponent = ext.icon;
 
     return (
         <BentoGridItem 
@@ -194,7 +169,7 @@ function ExtensionCard({ ext }: { ext: typeof EXTENSIONS[0] }) {
 
                 <div className="flex items-start justify-between">
                     <div className="p-2 w-16 h-16 rounded-2xl bg-background/50 flex items-center justify-center border border-border/30 shadow-inner">
-                        <IconComponent className={`w-8 h-8 ${ext.iconColor}`} isHovered={isHovered} />
+                        <ext.icon className={`w-8 h-8 ${ext.iconColor}`} isHovered={isHovered} />
                     </div>
                     
                     {isActive && (
@@ -416,7 +391,7 @@ export default function BillingPage() {
                         >
                             <div className="flex flex-col h-full justify-between gap-6">
                                 <div className="p-2 w-16 h-16 rounded-2xl bg-background/50 flex items-center justify-center border border-border/30 shadow-inner">
-                                    {ext.icon}
+                                    <ext.icon className={`w-8 h-8 ${ext.iconColor}`} isHovered={false} />
                                 </div>
                                 <div>
                                     <h4 className="text-xl font-bold mb-2">{ext.title}</h4>

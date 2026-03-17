@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { cookies } from "next/headers";
+import { minioClient, ensureTeamBucket } from "@/lib/storage/minio";
+import { CopyConditions } from "minio";
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,51 +20,45 @@ export async function POST(req: NextRequest) {
     const cookieStore = await cookies();
     const teamId = cookieStore.get("team_id")?.value || "";
 
+    if (!teamId) {
+      return NextResponse.json({ error: "No team context" }, { status: 400 });
+    }
+
     const { data: teamFolder } = await supabaseServer
       .from("team_folders")
-      .select("team_id, provider, folder_id, public_folder_id, private_folder_id, storage_bucket")
+      .select("team_id, folder_id")
       .eq("team_id", teamId)
-      .eq("provider", "supabase_storage")
       .single();
 
     if (!teamFolder) {
       return NextResponse.json({ error: "Team folder not found" }, { status: 404 });
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY as string;
-    const bucket = teamFolder.storage_bucket || process.env.SUPABASE_STORAGE_BUCKET || "team-files";
-    const admin = createClient(supabaseUrl, serviceKey);
+    const bucket = await ensureTeamBucket(teamId);
 
-    let baseFolderPath = scope === "public" ? teamFolder.public_folder_id : teamFolder.private_folder_id;
-    if (!baseFolderPath) {
-      const teamBasePath = teamFolder.folder_id || `teams/${teamId}`;
-      baseFolderPath = `${teamBasePath}/${scope === "public" ? "Public" : "Private"}`;
-    }
-    if (!baseFolderPath.includes(scope === "public" ? "Public" : "Private")) {
-      const teamBasePath = teamFolder.folder_id || `teams/${teamId}`;
-      baseFolderPath = `${teamBasePath}/${scope === "public" ? "Public" : "Private"}`;
-    }
-
-    const oldFullPath = `${baseFolderPath}/${path}`;
+    // Object keys relative to bucket root
+    const oldFullPath = path;
     const parent = oldFullPath.split("/").slice(0, -1).join("/");
-    const newFullPath = `${parent}/${newName}`;
+    const newFullPath = parent ? `${parent}/${newName}` : newName;
 
-    // Supabase Storage lacks rename; copy then delete
-    const { error: copyError } = await admin.storage.from(bucket).copy(oldFullPath, newFullPath);
-    if (copyError) {
-      return NextResponse.json({ error: copyError.message }, { status: 500 });
+    // MinIO doesn't have a direct rename. We must copy then remove.
+    // minioClient.copyObject(bucketName, objectName, sourceObject, conds)
+    // The sourceObject parameter should include the bucket name as a prefix: `/${bucketName}/${objectName}`
+    const sourcePath = `/${bucket}/${oldFullPath}`;
+    
+    try {
+      await minioClient.copyObject(bucket, newFullPath, sourcePath, new CopyConditions());
+      await minioClient.removeObject(bucket, oldFullPath);
+      return NextResponse.json({ success: true, path: newFullPath });
+    } catch (error: any) {
+      console.error("Error renaming in MinIO:", error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    const { error: deleteError } = await admin.storage.from(bucket).remove([oldFullPath]);
-    if (deleteError) {
-      return NextResponse.json({ error: deleteError.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true, path: newFullPath });
   } catch (error) {
     return NextResponse.json({ error: (error as Error).message }, { status: 500 });
   }
 }
+
 
 
