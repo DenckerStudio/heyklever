@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { landingSvgGradientStops } from "@/constants/landing-visual-theme";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -48,12 +49,14 @@ function StepVisual({ index }: { index: number }) {
       >
         <defs>
           <linearGradient id={gid} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#818cf8" />
-            <stop offset="100%" stopColor="#c084fc" />
+            {landingSvgGradientStops.map((s) => (
+              <stop key={s.offset} offset={s.offset} stopColor={s.color} stopOpacity={s.opacity} />
+            ))}
           </linearGradient>
         </defs>
         <rect
           className={common}
+          data-hiw-order="0"
           x="36"
           y="44"
           width="88"
@@ -65,6 +68,7 @@ function StepVisual({ index }: { index: number }) {
         />
         <rect
           className={common}
+          data-hiw-order="1"
           x="148"
           y="44"
           width="88"
@@ -72,11 +76,12 @@ function StepVisual({ index }: { index: number }) {
           rx="10"
           stroke={`url(#${gid})`}
           strokeWidth="2"
-          opacity="0.75"
+          opacity="0.85"
           vectorEffect="non-scaling-stroke"
         />
         <path
           className={common}
+          data-hiw-order="2"
           d="M 124 100 L 148 100"
           stroke={`url(#${gid})`}
           strokeWidth="2"
@@ -85,6 +90,7 @@ function StepVisual({ index }: { index: number }) {
         />
         <circle
           className={common}
+          data-hiw-order="3"
           cx="260"
           cy="100"
           r="28"
@@ -94,6 +100,7 @@ function StepVisual({ index }: { index: number }) {
         />
         <path
           className={common}
+          data-hiw-order="4"
           d="M 236 100 L 216 100"
           stroke={`url(#${gid})`}
           strokeWidth="2"
@@ -115,12 +122,14 @@ function StepVisual({ index }: { index: number }) {
       >
         <defs>
           <linearGradient id={gid} x1="0%" y1="100%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#6366f1" />
-            <stop offset="100%" stopColor="#a855f7" />
+            {landingSvgGradientStops.map((s) => (
+              <stop key={s.offset} offset={s.offset} stopColor={s.color} stopOpacity={s.opacity} />
+            ))}
           </linearGradient>
         </defs>
         <path
           className={common}
+          data-hiw-order="0"
           d="M 48 160 L 48 52 L 160 52 L 160 104 L 272 104 L 272 160"
           stroke={`url(#${gid})`}
           strokeWidth="2"
@@ -129,6 +138,7 @@ function StepVisual({ index }: { index: number }) {
         />
         <circle
           className={common}
+          data-hiw-order="1"
           cx="48"
           cy="160"
           r="8"
@@ -138,6 +148,7 @@ function StepVisual({ index }: { index: number }) {
         />
         <circle
           className={common}
+          data-hiw-order="2"
           cx="160"
           cy="52"
           r="8"
@@ -147,6 +158,7 @@ function StepVisual({ index }: { index: number }) {
         />
         <circle
           className={common}
+          data-hiw-order="3"
           cx="272"
           cy="104"
           r="8"
@@ -156,6 +168,7 @@ function StepVisual({ index }: { index: number }) {
         />
         <circle
           className={common}
+          data-hiw-order="4"
           cx="272"
           cy="160"
           r="8"
@@ -178,23 +191,14 @@ function StepVisual({ index }: { index: number }) {
       >
         <defs>
           <linearGradient id={gid} x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#818cf8" />
-            <stop offset="100%" stopColor="#e879f9" />
+            {landingSvgGradientStops.map((s) => (
+              <stop key={s.offset} offset={s.offset} stopColor={s.color} stopOpacity={s.opacity} />
+            ))}
           </linearGradient>
         </defs>
-        <rect
-          className={common}
-          x="40"
-          y="120"
-          width="240"
-          height="48"
-          rx="24"
-          stroke={`url(#${gid})`}
-          strokeWidth="2"
-          vectorEffect="non-scaling-stroke"
-        />
         <path
           className={common}
+          data-hiw-order="0"
           d="M 72 52 L 248 52 L 248 88 L 72 88 Z"
           stroke={`url(#${gid})`}
           strokeWidth="2"
@@ -203,28 +207,43 @@ function StepVisual({ index }: { index: number }) {
         />
         <path
           className={common}
+          data-hiw-order="1"
           d="M 88 68 L 200 68"
           stroke={`url(#${gid})`}
           strokeWidth="2"
           strokeLinecap="round"
-          opacity="0.6"
+          opacity="0.65"
           vectorEffect="non-scaling-stroke"
         />
         <path
           className={common}
+          data-hiw-order="2"
           d="M 88 80 L 168 80"
           stroke={`url(#${gid})`}
           strokeWidth="2"
           strokeLinecap="round"
-          opacity="0.4"
+          opacity="0.45"
           vectorEffect="non-scaling-stroke"
         />
         <path
           className={common}
+          data-hiw-order="3"
           d="M 160 88 L 160 120"
           stroke={`url(#${gid})`}
           strokeWidth="2"
           strokeLinecap="round"
+          vectorEffect="non-scaling-stroke"
+        />
+        <rect
+          className={common}
+          data-hiw-order="4"
+          x="40"
+          y="120"
+          width="240"
+          height="48"
+          rx="24"
+          stroke={`url(#${gid})`}
+          strokeWidth="2"
           vectorEffect="non-scaling-stroke"
         />
       </svg>
@@ -241,12 +260,14 @@ function StepVisual({ index }: { index: number }) {
     >
       <defs>
         <linearGradient id={gid} x1="0%" y1="50%" x2="100%" y2="50%">
-          <stop offset="0%" stopColor="#a78bfa" />
-          <stop offset="100%" stopColor="#818cf8" />
+          {landingSvgGradientStops.map((s) => (
+            <stop key={s.offset} offset={s.offset} stopColor={s.color} stopOpacity={s.opacity} />
+          ))}
         </linearGradient>
       </defs>
       <path
         className={common}
+        data-hiw-order="0"
         d="M 52 140 L 120 72 L 188 112 L 268 52"
         stroke={`url(#${gid})`}
         strokeWidth="2"
@@ -256,6 +277,7 @@ function StepVisual({ index }: { index: number }) {
       />
       <rect
         className={common}
+        data-hiw-order="1"
         x="36"
         y="132"
         width="40"
@@ -267,6 +289,7 @@ function StepVisual({ index }: { index: number }) {
       />
       <rect
         className={common}
+        data-hiw-order="2"
         x="244"
         y="36"
         width="40"
@@ -292,11 +315,11 @@ export function HowItWorks() {
       items.forEach((item, i) => {
         gsap.fromTo(
           item,
-          { opacity: 0, x: i % 2 === 0 ? -48 : 48 },
+          { opacity: 0, x: i % 2 === 0 ? -40 : 40 },
           {
             opacity: 1,
             x: 0,
-            duration: 0.9,
+            duration: 0.85,
             ease: "power3.out",
             scrollTrigger: {
               trigger: item,
@@ -308,7 +331,11 @@ export function HowItWorks() {
 
         const panel = item.querySelector<HTMLElement>(".step-visual-panel");
         const inner = item.querySelector<HTMLElement>(".step-visual-inner");
-        const paths = item.querySelectorAll<SVGGeometryElement>(".hiw-draw-path");
+        const paths = Array.from(item.querySelectorAll<SVGGeometryElement>(".hiw-draw-path")).sort(
+          (a, b) =>
+            Number(a.getAttribute("data-hiw-order") ?? 0) -
+            Number(b.getAttribute("data-hiw-order") ?? 0)
+        );
 
         if (panel && paths.length) {
           paths.forEach((path) => {
@@ -321,43 +348,54 @@ export function HowItWorks() {
             }
           });
 
-          gsap.fromTo(
-            paths,
-            {
-              strokeDashoffset: (i, el) => {
-                try {
-                  return (el as SVGGeometryElement).getTotalLength();
-                } catch {
-                  return 0;
-                }
-              },
+          const drawTl = gsap.timeline({
+            scrollTrigger: {
+              trigger: panel,
+              start: "top 72%",
+              end: "bottom 28%",
+              scrub: 0.5,
             },
-            {
-              strokeDashoffset: 0,
-              ease: "none",
-              scrollTrigger: {
-                trigger: panel,
-                start: "top 78%",
-                end: "bottom 22%",
-                scrub: 0.65,
+          });
+
+          const segment = 0.22;
+          paths.forEach((path, j) => {
+            const len = (() => {
+              try {
+                return path.getTotalLength();
+              } catch {
+                return 0;
+              }
+            })();
+            const endOpacity = path.hasAttribute("opacity")
+              ? Number(path.getAttribute("opacity"))
+              : 1;
+            drawTl.fromTo(
+              path,
+              { strokeDashoffset: len, opacity: 0.28 },
+              {
+                strokeDashoffset: 0,
+                opacity: endOpacity,
+                ease: "none",
+                duration: segment,
               },
-            }
-          );
+              j * (segment * 0.85)
+            );
+          });
         }
 
-        if (inner) {
+        if (inner && panel) {
           gsap.fromTo(
             inner,
-            { scale: 0.92, y: 18 },
+            { scale: 0.94, y: 14 },
             {
               scale: 1,
               y: 0,
               ease: "none",
               scrollTrigger: {
-                trigger: panel ?? item,
-                start: "top 80%",
-                end: "bottom 20%",
-                scrub: 0.85,
+                trigger: panel,
+                start: "top 78%",
+                end: "bottom 22%",
+                scrub: 0.75,
               },
             }
           );
@@ -372,7 +410,7 @@ export function HowItWorks() {
     <section ref={sectionRef} className="relative py-32 px-6">
       <div className="mx-auto max-w-5xl">
         <div className="mb-20 text-center">
-          <span className="text-sm font-medium uppercase tracking-[0.2em] text-indigo-400/60">
+          <span className="text-sm font-medium uppercase tracking-[0.2em] text-indigo-400/55">
             How It Works
           </span>
           <h2 className="mt-4 text-4xl font-bold text-white md:text-5xl">
@@ -381,7 +419,7 @@ export function HowItWorks() {
         </div>
 
         <div className="relative">
-          <div className="absolute left-1/2 top-0 hidden h-full w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-indigo-400/20 to-transparent md:block" />
+          <div className="absolute left-1/2 top-0 hidden h-full w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-indigo-400/25 to-transparent md:block" />
 
           <div className="grid gap-16 md:gap-24">
             {steps.map((step, i) => (
@@ -393,18 +431,18 @@ export function HowItWorks() {
               >
                 <div className="flex-1">
                   <div className="mb-3 flex items-center gap-3">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full border border-indigo-400/30 font-mono text-xs text-indigo-400">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full border border-indigo-400/35 font-mono text-xs text-indigo-300/90">
                       {step.num}
                     </span>
-                    <span className="h-px w-8 bg-indigo-400/20" />
+                    <span className="h-px w-8 bg-gradient-to-r from-indigo-400/35 to-transparent" />
                   </div>
                   <h3 className="mb-3 text-2xl font-bold text-white">{step.title}</h3>
                   <p className="text-base leading-relaxed text-white/50">{step.description}</p>
                 </div>
                 <div
-                  className="step-visual-panel relative flex h-56 w-full items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-indigo-500/[0.07] via-transparent to-violet-500/[0.06] md:h-64 md:w-96"
+                  className="step-visual-panel relative flex h-56 w-full items-center justify-center overflow-hidden rounded-2xl border border-indigo-400/15 bg-gradient-to-br from-indigo-500/[0.09] via-white/[0.02] to-violet-500/[0.08] shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset] md:h-64 md:w-96"
                 >
-                  <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_30%,rgba(99,102,241,0.12),transparent_55%)]" />
+                  <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_40%_25%,rgba(129,140,248,0.14),transparent_58%)]" />
                   <div className="step-visual-inner relative z-[1] flex h-full w-full items-center justify-center px-6 py-4">
                     <StepVisual index={i} />
                   </div>
