@@ -10,6 +10,7 @@ import { ContactSection, CtaBanner } from "@/components/landing/contact-section"
 import { LandingFooter } from "@/components/landing/landing-footer";
 import { SmoothScrollProvider } from "@/components/landing/smooth-scroll-provider";
 import { ParticleSphereWrapper } from "@/components/landing/particle-sphere-wrapper";
+import { HeroParticleProgressProvider } from "@/components/landing/hero-particle-progress";
 
 export default function Home() {
   return (
@@ -17,10 +18,12 @@ export default function Home() {
       <main className="relative min-h-screen bg-[#0a0a0a] text-white overflow-x-hidden">
         <LandingNavbar />
 
-        <div className="relative">
-          <ParticleSphereWrapper />
-          <HeroSection />
-        </div>
+        <HeroParticleProgressProvider>
+          <div className="relative">
+            <ParticleSphereWrapper />
+            <HeroSection />
+          </div>
+        </HeroParticleProgressProvider>
 
         <MarqueeSection />
         <FeaturesTicker />

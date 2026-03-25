@@ -4,8 +4,8 @@ import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { motion, useScroll, useTransform } from "motion/react";
-import Link from "next/link";
 import { landingSvgGradientStops } from "@/constants/landing-visual-theme";
+import { useHeroParticleProgressRef } from "@/components/landing/hero-particle-progress";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -13,7 +13,6 @@ const line1 = "We have reinvented";
 const line2 = "the future of";
 const line3 = "team intelligence.";
 
-const altLine1 = "One connected layer";
 const altLine2 = "for every document,";
 const altLine3 = "decision, and team.";
 
@@ -38,11 +37,11 @@ export function HeroSection() {
   const headingARef = useRef<HTMLDivElement>(null);
   const headingBRef = useRef<HTMLDivElement>(null);
   const subRef = useRef<HTMLParagraphElement>(null);
-  const ctaRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const svgGroupRef = useRef<SVGGElement>(null);
   const veilRef = useRef<HTMLDivElement>(null);
   const glowRef = useRef<HTMLDivElement>(null);
+  const particleProgressRef = useHeroParticleProgressRef();
 
   const { scrollYProgress } = useScroll({
     target: rootRef,
@@ -61,10 +60,7 @@ export function HeroSection() {
       const paths = svgRef.current?.querySelectorAll<SVGGeometryElement>(".hero-draw-path");
 
       if (subRef.current) {
-        gsap.set(subRef.current, { opacity: 0, y: 26 });
-      }
-      if (ctaRef.current) {
-        gsap.set(ctaRef.current, { opacity: 0, y: 20 });
+        gsap.set(subRef.current, { opacity: 0, y: 28 });
       }
 
       if (charsA?.length) {
@@ -85,17 +81,9 @@ export function HeroSection() {
         if (subRef.current) {
           intro.fromTo(
             subRef.current,
-            { opacity: 0, y: 26 },
-            { opacity: 1, y: 0, duration: 0.72 },
-            "+=0.14"
-          );
-        }
-        if (ctaRef.current) {
-          intro.fromTo(
-            ctaRef.current,
-            { opacity: 0, y: 20 },
-            { opacity: 1, y: 0, duration: 0.62, ease: "back.out(1.15)" },
-            "+=0.2"
+            { opacity: 0, y: 28 },
+            { opacity: 1, y: 0, duration: 0.75, ease: "power2.out" },
+            "+=0.18"
           );
         }
       }
@@ -120,6 +108,12 @@ export function HeroSection() {
           pin: pin,
           scrub: 0.55,
           anticipatePin: 1,
+          onUpdate: (self) => {
+            particleProgressRef.current = self.progress;
+          },
+          onLeaveBack: () => {
+            particleProgressRef.current = 0;
+          },
         },
       });
 
@@ -178,24 +172,10 @@ export function HeroSection() {
         tl.fromTo(
           subRef.current,
           { opacity: 1, y: 0 },
-          { opacity: 0.15, y: -10, ease: "power1.in" },
+          { opacity: 0.12, y: -10, ease: "power1.in" },
           0
         );
         tl.to(subRef.current, { opacity: 1, y: 0, ease: "power2.out" }, 0.44);
-      }
-
-      if (ctaRef.current) {
-        tl.fromTo(
-          ctaRef.current,
-          { opacity: 1, y: 0, scale: 1 },
-          { opacity: 0, y: 22, scale: 0.96, ease: "power2.in" },
-          0
-        );
-        tl.to(
-          ctaRef.current,
-          { opacity: 1, y: 0, scale: 1, ease: "back.out(1.2)" },
-          0.58
-        );
       }
 
       if (paths?.length) {
@@ -227,8 +207,11 @@ export function HeroSection() {
       }
     }, root);
 
-    return () => ctx.revert();
-  }, []);
+    return () => {
+      particleProgressRef.current = 0;
+      ctx.revert();
+    };
+  }, [particleProgressRef]);
 
   return (
     <section ref={rootRef} className="relative">
@@ -320,12 +303,12 @@ export function HeroSection() {
         </svg>
 
         <div className="relative z-10 mx-auto w-full max-w-[min(52rem,100%)] text-center">
-          <div className="relative mx-auto min-h-[clamp(7.5rem,20vw,13.5rem)] max-w-[min(48rem,100%)]">
+          <div className="relative mx-auto w-full max-w-[min(44rem,100%)] min-h-[clamp(10rem,26vw,17rem)]">
             <div
               ref={headingARef}
               className="absolute inset-x-0 top-0 overflow-visible px-1"
             >
-              <h1 className="text-[clamp(2.25rem,6.5vw,5.25rem)] font-bold leading-[1.02] tracking-[-0.038em] text-white">
+              <h1 className="text-[clamp(2.1rem,5.8vw,4.75rem)] font-bold leading-[1.08] tracking-[-0.036em] text-white text-balance hyphens-none">
                 <span className="block">{splitToChars(line1)}</span>
                 <span className="block">{splitToChars(line2)}</span>
                 <span className="block">{splitToChars(line3, gradientText)}</span>
@@ -333,8 +316,11 @@ export function HeroSection() {
             </div>
 
             <div ref={headingBRef} className="absolute inset-x-0 top-0 overflow-visible px-1" aria-hidden>
-              <p className="m-0 text-[clamp(2.25rem,6.5vw,5.25rem)] font-bold leading-[1.02] tracking-[-0.038em] text-white">
-                <span className="block">{splitToChars(altLine1)}</span>
+              <p className="m-0 text-[clamp(2.1rem,5.8vw,4.75rem)] font-bold leading-[1.08] tracking-[-0.036em] text-white text-balance hyphens-none">
+                <span className="block">
+                  {splitToChars("One connected ")}
+                  <span className="whitespace-nowrap">{splitToChars("layer")}</span>
+                </span>
                 <span className="block">{splitToChars(altLine2)}</span>
                 <span className="block">{splitToChars(altLine3, gradientText)}</span>
               </p>
@@ -343,29 +329,11 @@ export function HeroSection() {
 
           <p
             ref={subRef}
-            className="mx-auto mt-8 max-w-[34rem] text-pretty text-base leading-relaxed text-white/55 md:text-lg"
+            className="relative z-[1] mx-auto mt-10 max-w-[36rem] text-pretty pt-1 text-base leading-relaxed text-white/60 md:mt-12 md:text-lg md:leading-relaxed"
           >
             AI-native technology that turns scattered knowledge into connected workflows.
             From documents to decisions, Klever AI makes your team smarter.
           </p>
-
-          <div
-            ref={ctaRef}
-            className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
-          >
-            <Link
-              href="/signup"
-              className="group relative rounded-full bg-white px-8 py-3 text-sm font-semibold text-black transition-all hover:bg-white/90"
-            >
-              <span className="relative z-10">Get Started Free</span>
-            </Link>
-            <Link
-              href="/docs"
-              className="rounded-full border border-indigo-400/25 bg-white/[0.03] px-8 py-3 text-sm font-medium text-white/75 transition-all hover:border-indigo-400/45 hover:text-white"
-            >
-              View Documentation
-            </Link>
-          </div>
         </div>
 
         <motion.div
@@ -373,7 +341,7 @@ export function HeroSection() {
           style={{ opacity: scrollCueOpacity }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 2.15, duration: 0.65 }}
+          transition={{ delay: 1.55, duration: 0.65 }}
         >
           <motion.div
             className="flex h-8 w-5 items-start justify-center rounded-full border border-white/25 p-1"
