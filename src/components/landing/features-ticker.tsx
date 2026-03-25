@@ -19,31 +19,32 @@ export function FeaturesTicker() {
   const sectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!sectionRef.current) return;
-    const items = sectionRef.current.querySelectorAll(".feature-item");
+    const el = sectionRef.current;
+    if (!el) return;
 
-    items.forEach((item, i) => {
-      gsap.fromTo(
-        item,
-        { opacity: 0, y: 50 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 0.8,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: item,
-            start: "top 85%",
-            toggleActions: "play none none reverse",
-          },
-          delay: i * 0.05,
-        }
-      );
-    });
+    const ctx = gsap.context(() => {
+      const items = el.querySelectorAll(".feature-item");
+      items.forEach((item, i) => {
+        gsap.fromTo(
+          item,
+          { opacity: 0, y: 50 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.8,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: item,
+              start: "top 85%",
+              toggleActions: "play none none reverse",
+            },
+            delay: i * 0.05,
+          }
+        );
+      });
+    }, el);
 
-    return () => {
-      ScrollTrigger.getAll().forEach((t) => t.kill());
-    };
+    return () => ctx.revert();
   }, []);
 
   return (

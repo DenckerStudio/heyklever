@@ -19,47 +19,48 @@ export function ContactSection() {
   const sectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!sectionRef.current) return;
+    const el = sectionRef.current;
+    if (!el) return;
 
-    gsap.fromTo(
-      sectionRef.current.querySelector(".contact-heading"),
-      { opacity: 0, y: 60 },
-      {
-        opacity: 1,
-        y: 0,
-        duration: 1,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: "top 70%",
-          toggleActions: "play none none reverse",
-        },
-      }
-    );
-
-    const items = sectionRef.current.querySelectorAll(".contact-option");
-    items.forEach((item, i) => {
+    const ctx = gsap.context(() => {
       gsap.fromTo(
-        item,
-        { opacity: 0, x: -30 },
+        el.querySelector(".contact-heading"),
+        { opacity: 0, y: 60 },
         {
           opacity: 1,
-          x: 0,
-          duration: 0.6,
+          y: 0,
+          duration: 1,
           ease: "power3.out",
           scrollTrigger: {
-            trigger: sectionRef.current,
-            start: "top 60%",
+            trigger: el,
+            start: "top 70%",
             toggleActions: "play none none reverse",
           },
-          delay: i * 0.08,
         }
       );
-    });
 
-    return () => {
-      ScrollTrigger.getAll().forEach((t) => t.kill());
-    };
+      const items = el.querySelectorAll(".contact-option");
+      items.forEach((item, i) => {
+        gsap.fromTo(
+          item,
+          { opacity: 0, x: -30 },
+          {
+            opacity: 1,
+            x: 0,
+            duration: 0.6,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: el,
+              start: "top 60%",
+              toggleActions: "play none none reverse",
+            },
+            delay: i * 0.08,
+          }
+        );
+      });
+    }, el);
+
+    return () => ctx.revert();
   }, []);
 
   return (

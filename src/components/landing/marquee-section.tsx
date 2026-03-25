@@ -10,26 +10,26 @@ export function MarqueeSection() {
   const trackRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!trackRef.current) return;
-
     const track = trackRef.current;
+    if (!track) return;
+
     const firstChild = track.children[0] as HTMLElement;
     if (!firstChild) return;
 
-    gsap.to(track, {
-      x: () => -(firstChild.offsetWidth + 40),
-      ease: "none",
-      scrollTrigger: {
-        trigger: track.parentElement,
-        start: "top bottom",
-        end: "bottom top",
-        scrub: 1,
-      },
-    });
+    const ctx = gsap.context(() => {
+      gsap.to(track, {
+        x: () => -(firstChild.offsetWidth + 40),
+        ease: "none",
+        scrollTrigger: {
+          trigger: track.parentElement,
+          start: "top bottom",
+          end: "bottom top",
+          scrub: 1,
+        },
+      });
+    }, track);
 
-    return () => {
-      ScrollTrigger.getAll().forEach((t) => t.kill());
-    };
+    return () => ctx.revert();
   }, []);
 
   const text = "AI-Powered · Team Intelligence · RAG Search · Document Generation · Workflow Automation · ";
