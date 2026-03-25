@@ -1,40 +1,37 @@
-import { TimelineSection } from "@/components/sections/timeline";
-
-import { NavbarSection } from "@/components/sections/navbar/navbar";
-import FooterSection from "@/components/sections/footer/default";
-import CtaSection from "@/components/sections/cta/page";
-import { FeatureComparisonBlock } from "@/components/sections/feature-comparison-block";
-import { LetsWorkTogether } from "@/components/ui/lets-work-section";
-import FeaturesSection from "@/components/features-9";
-import IntegrationsSection from "@/components/ui/integrations-component";
-import { Testimonial } from "@/components/ui/design-testimonial";
-import { HeroGridSection } from "@/components/ui/hero-grid-section";
+import { LandingNavbar } from "@/components/landing/landing-navbar";
+import { HeroSection } from "@/components/landing/hero-section";
+import { FeaturesTicker } from "@/components/landing/features-ticker";
+import { MarqueeSection } from "@/components/landing/marquee-section";
+import { StatsSection } from "@/components/landing/stats-section";
+import { BenefitsSection } from "@/components/landing/benefits-section";
+import { TestimonialsSection } from "@/components/landing/testimonials-section";
+import { HowItWorks } from "@/components/landing/how-it-works";
+import { ContactSection, CtaBanner } from "@/components/landing/contact-section";
+import { LandingFooter } from "@/components/landing/landing-footer";
+import { SmoothScrollProvider } from "@/components/landing/smooth-scroll-provider";
+import { ParticleSphereWrapper } from "@/components/landing/particle-sphere-wrapper";
 
 export default function Home() {
   return (
-    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden">
-      <NavbarSection />
-      <section className="w-full h-[100vh] relative mb-10">
-        <HeroGridSection />
-      </section>
-      <section className="px-6 pb-20">
-        <IntegrationsSection />
-        <FeaturesSection />
-      </section>
-      <section className="px-6 pb-20">
-        <Testimonial />
-        <LetsWorkTogether />
-      </section>
-      <section className="px-6 pb-20">
-        <CtaSection />
-      </section>
-      <section className="px-6 pb-20">
-        <FeatureComparisonBlock />
-      </section>
-      <section className="px-6 pb-20">
-        <TimelineSection />
-      </section>
-      <FooterSection />
-    </main>
+    <SmoothScrollProvider>
+      <main className="relative min-h-screen bg-[#0a0a0a] text-white overflow-x-hidden">
+        <LandingNavbar />
+
+        <div className="relative">
+          <ParticleSphereWrapper />
+          <HeroSection />
+        </div>
+
+        <MarqueeSection />
+        <FeaturesTicker />
+        <StatsSection />
+        <BenefitsSection />
+        <TestimonialsSection />
+        <HowItWorks />
+        <ContactSection />
+        <CtaBanner />
+        <LandingFooter />
+      </main>
+    </SmoothScrollProvider>
   );
 }
