@@ -31,42 +31,43 @@ export function BenefitsSection() {
   const sectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!sectionRef.current) return;
+    const el = sectionRef.current;
+    if (!el) return;
 
-    const cards = sectionRef.current.querySelectorAll(".benefit-card");
+    const ctx = gsap.context(() => {
+      const cards = el.querySelectorAll(".benefit-card");
 
-    cards.forEach((card) => {
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: card,
-          start: "top 75%",
-          end: "top 25%",
-          toggleActions: "play none none reverse",
-        },
+      cards.forEach((card) => {
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: card,
+            start: "top 75%",
+            end: "top 25%",
+            toggleActions: "play none none reverse",
+          },
+        });
+
+        tl.fromTo(
+          card.querySelector(".benefit-num"),
+          { opacity: 0, x: -30 },
+          { opacity: 1, x: 0, duration: 0.6, ease: "power3.out" }
+        );
+        tl.fromTo(
+          card.querySelector(".benefit-title"),
+          { opacity: 0, y: 40 },
+          { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" },
+          "-=0.4"
+        );
+        tl.fromTo(
+          card.querySelector(".benefit-desc"),
+          { opacity: 0, y: 30 },
+          { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" },
+          "-=0.5"
+        );
       });
+    }, el);
 
-      tl.fromTo(
-        card.querySelector(".benefit-num"),
-        { opacity: 0, x: -30 },
-        { opacity: 1, x: 0, duration: 0.6, ease: "power3.out" }
-      );
-      tl.fromTo(
-        card.querySelector(".benefit-title"),
-        { opacity: 0, y: 40 },
-        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" },
-        "-=0.4"
-      );
-      tl.fromTo(
-        card.querySelector(".benefit-desc"),
-        { opacity: 0, y: 30 },
-        { opacity: 1, y: 0, duration: 0.8, ease: "power3.out" },
-        "-=0.5"
-      );
-    });
-
-    return () => {
-      ScrollTrigger.getAll().forEach((t) => t.kill());
-    };
+    return () => ctx.revert();
   }, []);
 
   return (
