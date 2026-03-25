@@ -60,8 +60,16 @@ export function HeroSection() {
       const charsB = headingBRef.current?.querySelectorAll(".hero-char");
       const paths = svgRef.current?.querySelectorAll<SVGGeometryElement>(".hero-draw-path");
 
+      if (subRef.current) {
+        gsap.set(subRef.current, { opacity: 0, y: 26 });
+      }
+      if (ctaRef.current) {
+        gsap.set(ctaRef.current, { opacity: 0, y: 20 });
+      }
+
       if (charsA?.length) {
-        gsap.fromTo(
+        const intro = gsap.timeline({ defaults: { ease: "power3.out" } });
+        intro.fromTo(
           charsA,
           { y: 100, opacity: 0, rotateX: -78 },
           {
@@ -71,9 +79,25 @@ export function HeroSection() {
             stagger: 0.018,
             duration: 1.05,
             ease: "power4.out",
-            delay: 0.2,
-          }
+          },
+          0.2
         );
+        if (subRef.current) {
+          intro.fromTo(
+            subRef.current,
+            { opacity: 0, y: 26 },
+            { opacity: 1, y: 0, duration: 0.72 },
+            "+=0.14"
+          );
+        }
+        if (ctaRef.current) {
+          intro.fromTo(
+            ctaRef.current,
+            { opacity: 0, y: 20 },
+            { opacity: 1, y: 0, duration: 0.62, ease: "back.out(1.15)" },
+            "+=0.2"
+          );
+        }
       }
 
       if (charsB?.length) {
@@ -154,23 +178,23 @@ export function HeroSection() {
         tl.fromTo(
           subRef.current,
           { opacity: 1, y: 0 },
-          { opacity: 0.2, y: -10, ease: "power1.in" },
+          { opacity: 0.15, y: -10, ease: "power1.in" },
           0
         );
-        tl.to(subRef.current, { opacity: 1, y: 0, ease: "power2.out" }, 0.38);
+        tl.to(subRef.current, { opacity: 1, y: 0, ease: "power2.out" }, 0.44);
       }
 
       if (ctaRef.current) {
         tl.fromTo(
           ctaRef.current,
           { opacity: 1, y: 0, scale: 1 },
-          { opacity: 0, y: 20, scale: 0.96, ease: "power2.in" },
+          { opacity: 0, y: 22, scale: 0.96, ease: "power2.in" },
           0
         );
         tl.to(
           ctaRef.current,
           { opacity: 1, y: 0, scale: 1, ease: "back.out(1.2)" },
-          0.42
+          0.58
         );
       }
 
@@ -349,7 +373,7 @@ export function HeroSection() {
           style={{ opacity: scrollCueOpacity }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1.5, duration: 0.7 }}
+          transition={{ delay: 2.15, duration: 0.65 }}
         >
           <motion.div
             className="flex h-8 w-5 items-start justify-center rounded-full border border-white/25 p-1"
