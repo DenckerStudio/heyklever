@@ -27,10 +27,6 @@ export function NavbarSection() {
       name: "Pricing",
       link: "/#pricing",
     },
-    {
-      name: "Contact",
-      link: "/#contact",
-    },
   ];
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
