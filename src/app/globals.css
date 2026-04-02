@@ -6,7 +6,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: rgb(255, 255, 255);
+  --background: rgb(245, 245, 245);
   --foreground: rgb(51, 51, 51);
   --card: rgb(255, 255, 255);
   --card-foreground: rgb(51, 51, 51);
@@ -61,7 +61,7 @@
 }
 
 .dark {
-  --background: rgb(23, 23, 23);
+  --background: rgb(10, 10, 10);
   --foreground: rgb(229, 229, 229);
   --card: rgb(38, 38, 38);
   --card-foreground: rgb(229, 229, 229);
@@ -331,4 +331,25 @@
 
 .prose-custom a:hover::after {
   transform: scaleX(0.5);
+}
+
+/* Landing hero: calm mesh drift (clean / minimal) */
+@keyframes hero-mesh-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+  50% {
+    transform: translate3d(0.45%, -0.55%, 0) rotate(0.5deg) scale(1.012);
+  }
+}
+
+.hero-mesh-drift {
+  animation: hero-mesh-drift 34s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-mesh-drift {
+    animation: none;
+  }
 }

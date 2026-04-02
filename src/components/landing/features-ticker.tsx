@@ -24,23 +24,24 @@ export function FeaturesTicker() {
 
     const ctx = gsap.context(() => {
       const items = el.querySelectorAll(".feature-item");
+      gsap.set(items, { autoAlpha: 0, y: 36 });
+
       items.forEach((item, i) => {
-        gsap.fromTo(
-          item,
-          { opacity: 0, y: 50 },
-          {
-            opacity: 1,
-            y: 0,
-            duration: 0.8,
-            ease: "power3.out",
-            scrollTrigger: {
-              trigger: item,
-              start: "top 85%",
-              toggleActions: "play none none reverse",
-            },
-            delay: i * 0.05,
-          }
-        );
+        const enterTween = gsap.to(item, {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.8,
+          ease: "power3.out",
+          paused: true,
+          delay: i * 0.05,
+        });
+
+        ScrollTrigger.create({
+          trigger: item,
+          start: "top 85%",
+          onEnter: () => enterTween.play(),
+          onLeaveBack: () => enterTween.reverse(),
+        });
       });
     }, el);
 
@@ -48,7 +49,11 @@ export function FeaturesTicker() {
   }, []);
 
   return (
-    <section id="features" ref={sectionRef} className="relative py-32 px-6">
+    <section
+      id="features"
+      ref={sectionRef}
+      className="relative py-32 px-6 bg-background"
+    >
       <div className="mx-auto max-w-5xl">
         <div className="mb-16 flex items-end justify-between border-b border-white/10 pb-6">
           <h2 className="text-sm font-medium uppercase tracking-[0.2em] text-white/40">

@@ -9,7 +9,7 @@ const navLinks = [
   { label: "Features", href: "#features" },
   { label: "Benefits", href: "#benefits" },
   { label: "Testimonials", href: "#testimonials" },
-  { label: "Contact", href: "#contact" },
+  { label: "Pricing", href: "#pricing" },
 ];
 
 export function LandingNavbar() {
@@ -25,7 +25,7 @@ export function LandingNavbar() {
   return (
     <>
       <motion.header
-        className={`fixed top-0 left-0 right-0 z-50 transition-colors duration-500 ${
+        className={`fixed top-0 left-0 right-0 z-[100] transition-colors duration-500 ${
           scrolled
             ? "bg-black/80 backdrop-blur-xl border-b border-white/5"
             : "bg-transparent"
