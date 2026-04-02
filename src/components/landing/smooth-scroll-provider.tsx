@@ -19,6 +19,24 @@ export function SmoothScrollProvider({ children }: { children: React.ReactNode }
     });
     setLenis(instance);
 
+    const scrollEl = document.documentElement;
+    ScrollTrigger.scrollerProxy(scrollEl, {
+      scrollTop(value?: number) {
+        if (value !== undefined) {
+          instance.scrollTo(value, { immediate: true });
+        }
+        return instance.scroll;
+      },
+      getBoundingClientRect() {
+        return {
+          top: 0,
+          left: 0,
+          width: window.innerWidth,
+          height: window.innerHeight,
+        };
+      },
+    });
+
     const onScroll = () => {
       ScrollTrigger.update();
     };
@@ -41,6 +59,7 @@ export function SmoothScrollProvider({ children }: { children: React.ReactNode }
       alive = false;
       cancelAnimationFrame(rafId);
       window.removeEventListener("resize", refresh);
+      ScrollTrigger.scrollerProxy(scrollEl, {});
       instance.off("scroll", onScroll);
       instance.destroy();
       setLenis(null);

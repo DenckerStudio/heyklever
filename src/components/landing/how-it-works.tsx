@@ -320,10 +320,11 @@ export function HowItWorks() {
             opacity: 1,
             x: 0,
             duration: 0.85,
+            delay: 0.14,
             ease: "power3.out",
             scrollTrigger: {
               trigger: item,
-              start: "top 82%",
+              start: "top 90%",
               toggleActions: "play none none reverse",
             },
           }
@@ -351,13 +352,14 @@ export function HowItWorks() {
           const drawTl = gsap.timeline({
             scrollTrigger: {
               trigger: panel,
-              start: "top 72%",
-              end: "bottom 28%",
-              scrub: 0.5,
+              start: "top 92%",
+              end: () => `+=${Math.max(Math.round(panel.offsetHeight * 1.35), 220)}`,
+              scrub: 0.55,
+              invalidateOnRefresh: true,
             },
           });
 
-          const segment = 0.22;
+          const segment = 0.3;
           paths.forEach((path, j) => {
             const len = (() => {
               try {
@@ -393,9 +395,10 @@ export function HowItWorks() {
               ease: "none",
               scrollTrigger: {
                 trigger: panel,
-                start: "top 78%",
-                end: "bottom 22%",
-                scrub: 0.75,
+                start: "top 92%",
+                end: () => `+=${Math.max(Math.round(panel.offsetHeight * 1.35), 220)}`,
+                scrub: 0.7,
+                invalidateOnRefresh: true,
               },
             }
           );
@@ -407,7 +410,7 @@ export function HowItWorks() {
   }, []);
 
   return (
-    <section ref={sectionRef} className="relative py-32 px-6">
+    <section ref={sectionRef} className="relative py-32 px-6 bg-black">
       <div className="mx-auto max-w-5xl">
         <div className="mb-20 text-center">
           <span className="text-sm font-medium uppercase tracking-[0.2em] text-indigo-400/55">
