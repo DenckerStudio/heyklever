@@ -1,11 +1,59 @@
 "use client";
 
-import { useLayoutEffect, useRef } from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { motion, type Variants } from "framer-motion";
 import { landingSvgGradientStops } from "@/constants/landing-visual-theme";
 
-gsap.registerPlugin(ScrollTrigger);
+const viewport = { once: true, margin: "-80px 0px -40px 0px", amount: 0.2 } as const;
+
+const easeOut = [0.22, 1, 0.36, 1] as const;
+
+const sectionCardVariants: Variants = {
+  hidden: { opacity: 0, y: 56 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.65, ease: easeOut },
+  },
+};
+
+const headerVariants: Variants = {
+  hidden: { opacity: 0, y: 40 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.55, ease: easeOut },
+  },
+};
+
+const stepRowVariants: Variants = {
+  hidden: { opacity: 0, y: 52 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.62,
+      ease: easeOut,
+      staggerChildren: 0.12,
+      delayChildren: 0.06,
+    },
+  },
+};
+
+const stepTextVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { duration: 0.48, ease: easeOut },
+  },
+};
+
+const stepVisualVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { duration: 0.52, ease: easeOut },
+  },
+};
 
 const steps = [
   {
@@ -304,135 +352,46 @@ function StepVisual({ index }: { index: number }) {
 }
 
 export function HowItWorks() {
-  const sectionRef = useRef<HTMLDivElement>(null);
-
-  useLayoutEffect(() => {
-    const section = sectionRef.current;
-    if (!section) return;
-
-    const ctx = gsap.context(() => {
-      const items = section.querySelectorAll<HTMLElement>(".step-item");
-      items.forEach((item, i) => {
-        gsap.fromTo(
-          item,
-          { opacity: 0, x: i % 2 === 0 ? -40 : 40 },
-          {
-            opacity: 1,
-            x: 0,
-            duration: 0.85,
-            delay: 0.14,
-            ease: "power3.out",
-            scrollTrigger: {
-              trigger: item,
-              start: "top 90%",
-              toggleActions: "play none none reverse",
-            },
-          }
-        );
-
-        const panel = item.querySelector<HTMLElement>(".step-visual-panel");
-        const inner = item.querySelector<HTMLElement>(".step-visual-inner");
-        const paths = Array.from(item.querySelectorAll<SVGGeometryElement>(".hiw-draw-path")).sort(
-          (a, b) =>
-            Number(a.getAttribute("data-hiw-order") ?? 0) -
-            Number(b.getAttribute("data-hiw-order") ?? 0)
-        );
-
-        if (panel && paths.length) {
-          paths.forEach((path) => {
-            try {
-              const len = path.getTotalLength();
-              path.style.strokeDasharray = `${len}`;
-              path.style.strokeDashoffset = `${len}`;
-            } catch {
-              /* ignore */
-            }
-          });
-
-          const drawTl = gsap.timeline({
-            scrollTrigger: {
-              trigger: panel,
-              start: "top 92%",
-              end: () => `+=${Math.max(Math.round(panel.offsetHeight * 1.35), 220)}`,
-              scrub: 0.55,
-              invalidateOnRefresh: true,
-            },
-          });
-
-          const segment = 0.3;
-          paths.forEach((path, j) => {
-            const len = (() => {
-              try {
-                return path.getTotalLength();
-              } catch {
-                return 0;
-              }
-            })();
-            const endOpacity = path.hasAttribute("opacity")
-              ? Number(path.getAttribute("opacity"))
-              : 1;
-            drawTl.fromTo(
-              path,
-              { strokeDashoffset: len, opacity: 0.28 },
-              {
-                strokeDashoffset: 0,
-                opacity: endOpacity,
-                ease: "none",
-                duration: segment,
-              },
-              j * (segment * 0.85)
-            );
-          });
-        }
-
-        if (inner && panel) {
-          gsap.fromTo(
-            inner,
-            { scale: 0.94, y: 14 },
-            {
-              scale: 1,
-              y: 0,
-              ease: "none",
-              scrollTrigger: {
-                trigger: panel,
-                start: "top 92%",
-                end: () => `+=${Math.max(Math.round(panel.offsetHeight * 1.35), 220)}`,
-                scrub: 0.7,
-                invalidateOnRefresh: true,
-              },
-            }
-          );
-        }
-      });
-    }, section);
-
-    return () => ctx.revert();
-  }, []);
-
   return (
-    <section ref={sectionRef} className="relative py-32 px-6 bg-black">
-      <div className="mx-auto max-w-5xl">
-        <div className="mb-20 text-center">
+    <section className="relative bg-background px-6 py-32">
+      <motion.div
+        className="mx-auto h-full w-full max-w-5xl rounded-3xl bg-black p-5"
+        initial="hidden"
+        whileInView="visible"
+        viewport={viewport}
+        variants={sectionCardVariants}
+      >
+        <motion.div
+          className="mb-20 text-center"
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+          variants={headerVariants}
+        >
           <span className="text-sm font-medium uppercase tracking-[0.2em] text-indigo-400/55">
             How It Works
           </span>
           <h2 className="mt-4 text-4xl font-bold text-white md:text-5xl">
             From chaos to clarity in four steps
           </h2>
-        </div>
+        </motion.div>
 
         <div className="relative">
           <div className="absolute left-1/2 top-0 hidden h-full w-px -translate-x-1/2 bg-gradient-to-b from-transparent via-indigo-400/25 to-transparent md:block" />
 
           <div className="grid gap-16 md:gap-24">
             {steps.map((step, i) => (
-              <div
+              <motion.div
                 key={step.num}
                 className={`step-item flex flex-col items-start gap-6 md:flex-row md:items-center md:gap-16 ${
                   i % 2 === 1 ? "md:flex-row-reverse" : ""
                 }`}
+                initial="hidden"
+                whileInView="visible"
+                viewport={viewport}
+                variants={stepRowVariants}
               >
-                <div className="flex-1">
+                <motion.div className="flex-1" variants={stepTextVariants}>
                   <div className="mb-3 flex items-center gap-3">
                     <span className="flex h-10 w-10 items-center justify-center rounded-full border border-indigo-400/35 font-mono text-xs text-indigo-300/90">
                       {step.num}
@@ -441,20 +400,21 @@ export function HowItWorks() {
                   </div>
                   <h3 className="mb-3 text-2xl font-bold text-white">{step.title}</h3>
                   <p className="text-base leading-relaxed text-white/50">{step.description}</p>
-                </div>
-                <div
+                </motion.div>
+                <motion.div
                   className="step-visual-panel relative flex h-56 w-full items-center justify-center overflow-hidden rounded-2xl border border-indigo-400/15 bg-gradient-to-br from-indigo-500/[0.09] via-white/[0.02] to-violet-500/[0.08] shadow-[0_0_0_1px_rgba(255,255,255,0.04)_inset] md:h-64 md:w-96"
+                  variants={stepVisualVariants}
                 >
                   <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_40%_25%,rgba(129,140,248,0.14),transparent_58%)]" />
                   <div className="step-visual-inner relative z-[1] flex h-full w-full items-center justify-center px-6 py-4">
                     <StepVisual index={i} />
                   </div>
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
             ))}
           </div>
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 }

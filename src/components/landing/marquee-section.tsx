@@ -5,7 +5,6 @@ import {
   motion,
   useReducedMotion,
   useScroll,
-  useSpring,
   useTransform,
   type MotionValue,
 } from "framer-motion";
@@ -45,20 +44,14 @@ const STORY_CHAPTERS = [
   },
 ] as const;
 
-const MARQUEE_FLIP = {
-  duration: 0.42,
-  stagger: 0.055,
-  maxAbsRotation: 22,
-} as const;
-
 const gradientText =
   "bg-gradient-to-r from-indigo-400 via-violet-400 to-purple-400 bg-clip-text text-transparent";
 
 const CHAPTER_PHASE_DUR = STORY_TL_TOTAL - CHAPTER_PHASE_START - 0.35;
-const CHAPTER_STEP =
-  CHAPTER_PHASE_DUR / Math.max(STORY_CHAPTERS.length - 1, 1);
+const CHAPTER_STEP = CHAPTER_PHASE_DUR / Math.max(STORY_CHAPTERS.length - 1, 1);
 
 function chapterTIn(i: number): number {
+  if (i === 0) return 0;
   return CHAPTER_PHASE_START + i * CHAPTER_STEP * 0.92;
 }
 
@@ -71,6 +64,21 @@ function chapterMotionAtProgress(p: number, i: number) {
   const tIn = chapterTIn(i);
   const n = STORY_CHAPTERS.length;
   const tNext = i < n - 1 ? chapterTIn(i + 1) : Number.POSITIVE_INFINITY;
+
+  if (i === 0) {
+    if (t < tNext) {
+      return { opacity: 1, y: 0, scale: 1 };
+    }
+    if (t < tNext + 0.26) {
+      const u = clamp01((t - tNext) / 0.26);
+      return {
+        opacity: 1 - u,
+        y: -14 * u,
+        scale: 1,
+      };
+    }
+    return { opacity: 0, y: -14, scale: 1 };
+  }
 
   if (t < tIn) {
     return { opacity: 0, y: 22, scale: 0.985 };
@@ -113,12 +121,6 @@ function dotMotionAtProgress(p: number, i: number) {
   return { opacity: 1, scale: 1 };
 }
 
-function stableWordRotation(seed: number): number {
-  const x = Math.sin(seed * 12.9898 + 78.233) * 43758.5453;
-  const frac = x - Math.floor(x);
-  return (frac * 2 - 1) * MARQUEE_FLIP.maxAbsRotation;
-}
-
 function splitWords(line: string) {
   return line.split(/\s+/).filter(Boolean);
 }
@@ -128,43 +130,23 @@ type MarqueeSectionProps = {
   overlayScrollerRef?: RefObject<HTMLElement | null>;
 };
 
-function FlipWordSpan({
+function HeadlineWordSpan({
   word,
-  wordIndex,
-  progress,
   gradientClass,
 }: {
   word: string;
-  wordIndex: number;
-  progress: MotionValue<number>;
   gradientClass?: string;
 }) {
-  const t0 = 0.06 + wordIndex * MARQUEE_FLIP.stagger;
-  const start = t0 / STORY_TL_TOTAL;
-  const end = (t0 + MARQUEE_FLIP.duration) / STORY_TL_TOTAL;
-  const rot0 = stableWordRotation(wordIndex + 1);
-
-  const opacity = useTransform(progress, [start, end], [0, 1]);
-  const y = useTransform(progress, [start, end], [-36, 0]);
-  const rotate = useTransform(progress, [start, end], [rot0, 0]);
-
   return (
     <span className="inline-block overflow-hidden pb-0.5 align-bottom text-white">
-      <motion.span
-        style={{
-          opacity,
-          y,
-          rotate,
-          display: "inline-block",
-          willChange: "transform, opacity",
-        }}
+      <span
         className={
           gradientClass ??
-          "will-change-transform [text-shadow:0_0_24px_rgba(167,139,250,0.2)]"
+          "inline-block will-change-transform [text-shadow:0_0_24px_rgba(167,139,250,0.2)]"
         }
       >
         {word}
-      </motion.span>
+      </span>
     </span>
   );
 }
@@ -203,9 +185,15 @@ function StoryChapterAnimated({
   index: number;
   progress: MotionValue<number>;
 }) {
-  const opacity = useTransform(progress, (p) => chapterMotionAtProgress(p, index).opacity);
+  const opacity = useTransform(
+    progress,
+    (p) => chapterMotionAtProgress(p, index).opacity,
+  );
   const y = useTransform(progress, (p) => chapterMotionAtProgress(p, index).y);
-  const scale = useTransform(progress, (p) => chapterMotionAtProgress(p, index).scale);
+  const scale = useTransform(
+    progress,
+    (p) => chapterMotionAtProgress(p, index).scale,
+  );
 
   return (
     <motion.article
@@ -233,8 +221,14 @@ function ProgressDot({
   progress: MotionValue<number>;
   index: number;
 }) {
-  const opacity = useTransform(progress, (p) => dotMotionAtProgress(p, index).opacity);
-  const scale = useTransform(progress, (p) => dotMotionAtProgress(p, index).scale);
+  const opacity = useTransform(
+    progress,
+    (p) => dotMotionAtProgress(p, index).opacity,
+  );
+  const scale = useTransform(
+    progress,
+    (p) => dotMotionAtProgress(p, index).scale,
+  );
 
   return (
     <motion.span
@@ -262,19 +256,11 @@ export function MarqueeSection({
     offset: ["start start", "end end"],
   });
 
-  const progress = useSpring(scrollYProgress, {
-    stiffness: 120,
-    damping: 32,
-    mass: 0.45,
-    restDelta: 0.0004,
-  });
+  /** Raw progress avoids spring lag at scroll 0 (was leaving intro copy invisible). */
+  const progress = scrollYProgress;
 
   const pathDraw = useTransform(progress, [0, 1], [0, 1]);
-  const fillOpacity = useTransform(
-    progress,
-    [0, 0.72, 1],
-    [0, 0.32, 0.32],
-  );
+  const fillOpacity = useTransform(progress, [0, 0.72, 1], [0, 0.32, 0.32]);
 
   const bgScaleFrom = suppressScrollPinForHeroOverlay ? 0.84 : 0.88;
   const bgScaleTo = suppressScrollPinForHeroOverlay ? 1.32 : 1.22;
@@ -283,22 +269,8 @@ export function MarqueeSection({
 
   const progressFillScaleY = useTransform(
     progress,
-    [
-      CHAPTER_PHASE_START / STORY_TL_TOTAL,
-      1,
-    ],
+    [CHAPTER_PHASE_START / STORY_TL_TOTAL, 1],
     [0, 1],
-  );
-
-  const kickerOpacity = useTransform(
-    progress,
-    [0, 0.22 / STORY_TL_TOTAL, 1],
-    [0, 1, 1],
-  );
-  const kickerY = useTransform(
-    progress,
-    [0, 0.22 / STORY_TL_TOTAL, 1],
-    [10, 0, 0],
   );
 
   const sectionScrollHeightClass = reduceMotionPreference
@@ -307,18 +279,38 @@ export function MarqueeSection({
       : ""
     : "min-h-[calc(100dvh+420dvh)]";
 
+  /** Pinned stage: whole block sticks to the overlay viewport while scroll advances story progress. */
+  const pinStageClass = reduceMotionPreference
+    ? `relative overflow-x-hidden overflow-y-visible ${
+        suppressScrollPinForHeroOverlay ? "min-h-[140dvh]" : ""
+      }`
+    : "sticky top-0 z-[5] flex min-h-[100dvh] w-full flex-col overflow-x-hidden overflow-y-visible";
+
+  const pinInnerClass = reduceMotionPreference
+    ? `relative overflow-x-hidden overflow-y-visible border-b border-white/[0.045] px-5 py-16 sm:px-8 sm:py-20 before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:z-[4] before:h-24 before:bg-gradient-to-b before:from-[#0a0a0a] before:via-[#0a0a0a]/35 before:to-transparent before:content-[''] after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:z-[4] after:h-24 after:bg-gradient-to-t after:from-[#0a0a0a] after:via-[#0a0a0a]/45 after:to-transparent after:content-[''] ${
+        suppressScrollPinForHeroOverlay ? "min-h-screen" : ""
+      }`
+    : `relative flex min-h-[100dvh] flex-1 flex-col overflow-x-hidden overflow-y-visible border-b border-white/[0.045] px-5 py-16 sm:px-8 sm:py-20 before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:z-[4] before:h-24 before:bg-gradient-to-b before:from-[#0a0a0a] before:via-[#0a0a0a]/35 before:to-transparent before:content-[''] after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:z-[4] after:h-24 after:bg-gradient-to-t after:from-[#0a0a0a] after:via-[#0a0a0a]/45 after:to-transparent after:content-['']`;
+
   return (
     <section
       ref={rootRef}
-      className={`relative overflow-hidden bg-background ${sectionScrollHeightClass}`}
+      className={`relative bg-background ${sectionScrollHeightClass} ${
+        reduceMotionPreference
+          ? "overflow-x-hidden overflow-y-visible"
+          : "overflow-visible"
+      }`}
     >
-      <div
-        className={`relative overflow-hidden border-b border-white/[0.045] px-5 py-16 sm:px-8 sm:py-20 before:pointer-events-none before:absolute before:inset-x-0 before:top-0 before:z-[4] before:h-24 before:bg-gradient-to-b before:from-[#0a0a0a] before:via-[#0a0a0a]/35 before:to-transparent before:content-[''] after:pointer-events-none after:absolute after:inset-x-0 after:bottom-0 after:z-[4] after:h-24 after:bg-gradient-to-t after:from-[#0a0a0a] after:via-[#0a0a0a]/45 after:to-transparent after:content-[''] ${suppressScrollPinForHeroOverlay ? "min-h-screen" : ""}`}
-      >
+      <div className={pinStageClass}>
+        <div className={pinInnerClass}>
         <motion.div
           className="pointer-events-none absolute inset-0 z-[1] flex items-center justify-center overflow-hidden will-change-transform"
           style={{
-            scale: reduceMotionPreference ? (suppressScrollPinForHeroOverlay ? 1.22 : 1.05) : bgScale,
+            scale: reduceMotionPreference
+              ? suppressScrollPinForHeroOverlay
+                ? 1.22
+                : 1.05
+              : bgScale,
             opacity: reduceMotionPreference ? 1 : bgLayerOpacity,
             transformOrigin: "50% 42%",
           }}
@@ -343,9 +335,21 @@ export function MarqueeSection({
                 y2="1"
                 gradientUnits="objectBoundingBox"
               >
-                <stop offset="0%" stopColor="rgb(129 140 248)" stopOpacity="0.92" />
-                <stop offset="52%" stopColor="rgb(167 139 250)" stopOpacity="0.62" />
-                <stop offset="100%" stopColor="rgb(192 132 252)" stopOpacity="0.38" />
+                <stop
+                  offset="0%"
+                  stopColor="rgb(129 140 248)"
+                  stopOpacity="0.92"
+                />
+                <stop
+                  offset="52%"
+                  stopColor="rgb(167 139 250)"
+                  stopOpacity="0.62"
+                />
+                <stop
+                  offset="100%"
+                  stopColor="rgb(192 132 252)"
+                  stopOpacity="0.38"
+                />
               </linearGradient>
               <linearGradient
                 id={`${marqueeBgSvgUid}_fill`}
@@ -387,46 +391,32 @@ export function MarqueeSection({
           </svg>
         </motion.div>
 
-        <div
-          className="sticky top-0 z-[3] mx-auto w-full max-w-[min(44rem,100%)] bg-[#0a0a0a]/55 px-4 pb-3 pt-2 backdrop-blur-md sm:px-6 sm:pb-4 sm:pt-3"
-        >
-          <motion.p
-            className="mb-2 text-center font-mono text-[0.55rem] font-medium uppercase tracking-[0.38em] text-cyan-300/85 sm:mb-3 sm:text-[0.65rem]"
-            style={
-              reduceMotionPreference
-                ? undefined
-                : { opacity: kickerOpacity, y: kickerY }
-            }
-          >
+        <div className="relative z-[3] mx-auto w-full max-w-[min(44rem,100%)] bg-[#0a0a0a]/55 px-4 pb-3 pt-2 backdrop-blur-md sm:px-6 sm:pb-4 sm:pt-3">
+          <p className="mb-2 text-center font-mono text-[0.55rem] font-medium uppercase tracking-[0.38em] text-cyan-300/85 sm:mb-3 sm:text-[0.65rem]">
             {KICKER}
-          </motion.p>
+          </p>
           <h2
             className={`m-0 text-center text-[clamp(1.75rem,4.5vw,3rem)] leading-[1.1] tracking-[-0.032em] text-balance [text-shadow:0_1px_28px_rgba(0,0,0,0.55)] ${reduceMotionPreference ? "font-bold" : "font-semibold"}`}
           >
             {reduceMotionPreference ? (
               <>
                 <span className="block text-white">{HEADLINE_LINE1}</span>
-                <span className={`mt-1 block sm:mt-1.5 ${gradientText}`}>{HEADLINE_LINE2}</span>
+                <span className={`mt-1 block sm:mt-1.5 ${gradientText}`}>
+                  {HEADLINE_LINE2}
+                </span>
               </>
             ) : (
               <>
                 <span className="inline-flex flex-wrap justify-center gap-x-[0.3em] gap-y-1.5">
                   {line1Words.map((word, wi) => (
-                    <FlipWordSpan
-                      key={`l1-${wi}`}
-                      word={word}
-                      wordIndex={wi}
-                      progress={progress}
-                    />
+                    <HeadlineWordSpan key={`l1-${wi}`} word={word} />
                   ))}
                 </span>
                 <span className="mt-1.5 flex flex-wrap justify-center gap-x-[0.3em] gap-y-1.5 sm:mt-2">
                   {line2Words.map((word, wi) => (
-                    <FlipWordSpan
+                    <HeadlineWordSpan
                       key={`l2-${wi}`}
                       word={word}
-                      wordIndex={line1Words.length + wi}
-                      progress={progress}
                       gradientClass={`inline-block will-change-transform ${gradientText}`}
                     />
                   ))}
@@ -459,7 +449,11 @@ export function MarqueeSection({
                     />
                   ))
                 : STORY_CHAPTERS.map((ch, i) => (
-                    <ProgressDot key={`dot-${ch.title}`} progress={progress} index={i} />
+                    <ProgressDot
+                      key={`dot-${ch.title}`}
+                      progress={progress}
+                      index={i}
+                    />
                   ))}
             </div>
           </div>
@@ -469,7 +463,10 @@ export function MarqueeSection({
               reduceMotionPreference ? "" : "relative"
             }`}
           >
-            <div className="mb-6 flex justify-center gap-2 sm:hidden" aria-hidden>
+            <div
+              className="mb-6 flex justify-center gap-2 sm:hidden"
+              aria-hidden
+            >
               {STORY_CHAPTERS.map((ch) => (
                 <span
                   key={`m-dot-${ch.title}`}
@@ -481,10 +478,16 @@ export function MarqueeSection({
               reduceMotionPreference ? (
                 <StoryChapterStatic key={ch.title} ch={ch} index={i} />
               ) : (
-                <StoryChapterAnimated key={ch.title} ch={ch} index={i} progress={progress} />
+                <StoryChapterAnimated
+                  key={ch.title}
+                  ch={ch}
+                  index={i}
+                  progress={progress}
+                />
               ),
             )}
           </div>
+        </div>
         </div>
       </div>
     </section>

@@ -147,9 +147,15 @@ export function TestimonialsSection() {
   return (
     <section
       id="testimonials"
-      className="relative py-32 px-6 bg-background/95 bg-linear-to-b from-indigo-500/30 to-background overflow-hidden"
+      className="relative py-32 px-6 bg-background overflow-hidden"
     >
-      <Image src="/spiral.svg" alt="Planet" width={1000} height={1000} className="absolute scale-[300%] inset-0 w-full h-full mix-blend-overlay z-1" />
+        <Image
+          src="/gradient_11.svg"
+          alt="Planet"
+          width={1000}
+          height={1000}
+          className="absolute scale-[100%] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-20"
+        />
       <div className="mx-auto max-w-5xl">
         <div className="mb-16 flex items-center gap-4">
           <span className="text-sm font-medium uppercase tracking-[0.2em] text-white/40">
